@@ -1,0 +1,32 @@
+# 1. Сначала игнорируем абсолютно всё
+/*
+!/.gitignore
+!/README.md
+
+# 2. Разрешаем папки проектов (но их содержимое пока скрыто)
+!/client/
+!/server/
+
+# --- Настройка для CLIENT (Vue/TS) ---
+/client/*
+!/client/src/
+!/client/public/
+!/client/package.json
+!/client/package-lock.json
+!/client/tsconfig*.json
+!/client/vite.config.ts
+!/client/index.html
+
+# --- Настройка для SERVER ---
+/server/*
+!/server/src/
+!/server/package.json
+!/server/package-lock.json
+!/server/tsconfig.json
+
+# 3. Стандартные исключения (даже внутри разрешенных папок)
+node_modules/
+dist/
+.env
+.env.*
+.DS_Store

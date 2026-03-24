@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    
+    // Структура проекта
+    "rootDir": "./src",
+    "outDir": "./dist",
+    
+    // Типизация Node.js
+    "types": ["node"],
+    
+    // Строгость (максимальная, как ты и хотел)
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Рекомендуемые настройки для современных ESM-проектов
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    
+    // Отладка
+    "sourceMap": true
+  },
+  "include": ["src/**/*"]
+}

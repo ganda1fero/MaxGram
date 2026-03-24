@@ -1,12 +1,14 @@
 <script setup lang="ts">
     
-    import { ref, watch, useId } from 'vue';
+    import { ref, watch, useId, computed } from 'vue';
     import { Search } from 'lucide-vue-next';
+    import { RotateCw } from 'lucide-vue-next';
     import ExitButton from '../buttons/ExitButton.vue';
 
     const input = defineModel<string>('input', { required: true });
     const props = defineProps<{
         placeholder?: string,
+        isReconnect?: boolean,
     }>();
     const emit = defineEmits<{
         (e: 'submit'): void,
@@ -21,6 +23,12 @@
         input.value = '';
     }
 
+    const placeholderValue = computed(() => {
+        if (props.isReconnect) return "Reconnecting...";
+        if (props.placeholder) return props.placeholder;
+        return "Search";
+    });
+
     watch(isFocus, () => {
         if (isFocus.value) {
             emit('focus');
@@ -33,7 +41,8 @@
 <template>
     <label :for="inputId" style="display: contents;">
         <div class="input-wrapper" :class="{ 'input-focus': isFocus }">
-            <Search class="search-icon" :class="{ 'icon-focus': isFocus }"/>
+            <Search v-if="!isReconnect" class="icon" :class="{ 'icon-focus': isFocus }"/>
+            <RotateCw v-else class="icon spin" :class="{ 'icon-focus': isFocus }"/>
             <input
                 v-model="input"
                 @focus="($event.target as HTMLInputElement).readOnly = false; isFocus = true"
@@ -46,7 +55,7 @@
             />
             <Transition name="placeholder">
                 <div class="placeholder" v-show="!input">
-                    {{ !!props.placeholder ? props.placeholder : 'Search' }}
+                    {{ placeholderValue }}
                 </div>
             </Transition>
             <Transition name="exit-button">
@@ -120,7 +129,7 @@
         outline: none;
         background-color: transparent;
     }
-    .search-icon{
+    .icon{
         width: 24px;
         height: 24px;
 
@@ -132,6 +141,9 @@
 
         &.icon-focus{
             color: rgba(39, 150, 203, 1);
+        }
+        &.spin{
+            animation: spin 1.5s linear infinite;
         }
     }
     .exit-button{
@@ -152,5 +164,13 @@
         opacity: 0;
         transform: scale(0.5);
         transform: translateX(10px);
+    }
+    @keyframes spin{
+        from{
+            transform: rotate(0deg);
+        }
+        to{
+            transform: rotate(360deg);
+        }
     }
 </style>

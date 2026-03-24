@@ -1,12 +1,14 @@
 <script setup lang="ts">
     import { ref } from 'vue';
     import { useSearchStore } from '@/stores/useSearchStore';
+    import { useWebSocketStore } from '@/stores/useWebSocketStore';
     import SidebarButton from '../buttons/SidebarButton.vue';
     import SearchInput from '../input-fields/SearchInput.vue';
     import ChatList from './SidebarChatList.vue';
     import SearchList from './SidebarSearchList.vue';
 
     const searchStore = useSearchStore();
+    const socketStore = useWebSocketStore();
 
     const isMenu = ref<boolean>(true);
     const input = ref<string>('');
@@ -30,7 +32,7 @@
                     @click="menuButtonLogic()"
                 />
             </div>
-            <SearchInput @focus="isMenu = false" v-model:input="input"/>
+            <SearchInput @focus="isMenu = false" v-model:input="input" :is-reconnect="!socketStore.isConnected()"/>
         </div>
         <Transition name="chat-list">
             <ChatList v-if="isMenu" />

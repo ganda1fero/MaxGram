@@ -51,7 +51,13 @@ class MessagesStore {
     }
 
     getMessagesList(chatId: UUID): Message[] {
-        return this._messagesByChat.get(chatId) || [];
+        let existing = this._messagesByChat.get(chatId);
+        if (!existing) {
+            existing = [];
+            this._messagesByChat.set(chatId, existing);
+        }
+
+        return existing;
     }
 }
 

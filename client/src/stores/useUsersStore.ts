@@ -1,6 +1,7 @@
 import type { UUID } from "@/types/UUID";
 import type { User } from "@/types/user";
 import type { GetUserPacket } from "@/types/web-socket/client/get-user-packet";
+
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useWebSocketStore } from "./useWebSocketStore";
@@ -37,12 +38,12 @@ export const useUsersStore = defineStore('users', () => {
             if (firstKey) users.value.delete(firstKey);
         } else usersCount++;
         
-        const newUser = {
+        const newUser: User = {
             isLoad: true,
             username: 'Unknown',
             status: 'offline',
             ...userData,
-        } as User;
+        };
 
         users.value.set(newUser.ID, newUser);
         return newUser;

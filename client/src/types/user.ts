@@ -1,5 +1,4 @@
 import type { UUID } from "./UUID"
-import type { GradientPair } from "./gradient-pair"
 
 export type User = {
     isLoad: boolean,

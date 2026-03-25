@@ -19,7 +19,8 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    switch (data?.payLoad?.type) {
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS'; 
+    switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
             break;
@@ -32,7 +33,8 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
             console.warn("Unknown packet type!", data?.payLoad?.type);
-            break;
+
+            return type satisfies never;
     }
 };
 

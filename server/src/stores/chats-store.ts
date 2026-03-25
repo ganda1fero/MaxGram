@@ -1,5 +1,5 @@
-import { type Chat } from "../types/chat.js"
-import { type ChatToJSON } from "../types/chat.js";
+import type { Chat } from "../types/chat.js"
+import type { StringifyChat } from "../types/chat.js";
 import type { UUID } from "node:crypto";
 import fs from 'node:fs/promises';
 
@@ -11,7 +11,7 @@ class ChatsStorage {
 
     async save() {
         try {
-            const dataToSave: ChatToJSON[] = this._chatsList.map(chat => ({
+            const dataToSave: StringifyChat[] = this._chatsList.map(chat => ({
                 ...chat,
                 participants: Array.from(chat.participants),
             }));
@@ -25,7 +25,7 @@ class ChatsStorage {
     async init(): Promise<void> {
         try {
             const fileData = await fs.readFile(this.SAVE_PATH, 'utf-8');
-            const rawChats: ChatToJSON[] = JSON.parse(fileData);
+            const rawChats: StringifyChat[] = JSON.parse(fileData);
             const chats: Chat[] = rawChats.map(rawChat => ({
                 ...rawChat,
                 participants: new Set(rawChat.participants),

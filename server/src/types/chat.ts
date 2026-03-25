@@ -12,7 +12,7 @@ export type Chat = {
     updatedAt: number, // timestamp
 }
 
-export type ChatToJSON = {
+export type StringifyChat = {
     readonly ID: UUID, // UUID
     readonly type: 'private' | 'group',
     titile?: string, // title for public groups

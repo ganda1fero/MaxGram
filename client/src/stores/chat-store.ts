@@ -11,6 +11,7 @@ import { useWebSocketStore } from "./useWebSocketStore";
 export const useChatStore = defineStore('chat', () => {
     // --- state
     const chats = ref(new Map<UUID, Chat>());
+    const activeChat = ref<UUID | null>(null);
 
     const LRUcache = new Set<UUID>();
     const MAX_CHATS_COUNT = 50;
@@ -40,6 +41,17 @@ export const useChatStore = defineStore('chat', () => {
         LRUcache.add(existing.ID);
         
         return existing; 
+    }
+
+    const getActiveChatId = (): UUID | null => {
+        return activeChat.value;
+    }
+
+    const getActiveChat = (): Chat | undefined => {
+        const chatId = getActiveChatId();
+        if (!chatId) return;
+
+        return getChat(chatId);
     }
 
     const getSortedChatsId = computed(() => {
@@ -80,6 +92,14 @@ export const useChatStore = defineStore('chat', () => {
         Object.assign(chat, chatData);
     }
 
+    const openChat = (chatId: UUID) => {
+        activeChat.value = chatId;
+    }
+
+    const closeChat = () => {
+        activeChat.value = null;
+    }
+
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
             type: 'GET_CHAT',
@@ -100,5 +120,5 @@ export const useChatStore = defineStore('chat', () => {
     // --- boot
     fetchGetAllChats();
 
-    return { getChat, getSortedChatsId, upsertChat };
+    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat };
 });

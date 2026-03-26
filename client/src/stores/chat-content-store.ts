@@ -2,6 +2,7 @@ import type { UUID } from "@/types/UUID";
 import type { ChatContent } from "@/types/chatContent";
 import type { Ref } from 'vue'
 import type { GetChatContentPacket } from "@/types/web-socket/client/get-chat-content-packet";
+import type { Message } from "@/types/message";
 
 import { ref } from "vue";
 import { defineStore } from "pinia";
@@ -66,9 +67,29 @@ export const useChatContentStore = defineStore('chatContent', () => {
         socketStore.send(chatContentPacket);
     }
 
+    const appendMessages = (chatId: UUID, messages: Message[], hasMoreOlder: boolean | undefined, hasMoreNewer: boolean | undefined): void => {
+        const chatContent = getChatContent(chatId);
+        const chatMessages = chatContent.messages;
+
+        chatContent.hasMoreNewer = hasMoreNewer || false;
+        if (chatMessages.length === 0) chatContent.hasMoreOlder = hasMoreOlder || false;
+
+        chatMessages.push(...messages);
+    }
+
+    const prependMessages = (chatId: UUID, messages: Message[], hasMoreOlder: boolean | undefined, hasMoreNewer: boolean | undefined): void => {
+        const chatContent = getChatContent(chatId);
+        const chatMessages = chatContent.messages;
+
+        chatContent.hasMoreOlder = hasMoreOlder || false;
+        if (chatMessages.length === 0) chatContent.hasMoreNewer = hasMoreNewer || false;
+
+        chatMessages.unshift(...messages);
+    }
+
     // fetchOlder method
 
     // fetchNewer method
 
-    return { getChatContent };
+    return { getChatContent, appendMessages, prependMessages };
 });

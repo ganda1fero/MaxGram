@@ -146,6 +146,7 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
             type: 'INIT_CHAT_CONTENT',
             chatId,
             messages: allMessages.slice(startIndex, lastIndex),
+            pivotMessageId: allMessages[startIndex]?.ID,
             hasMoreOlder: startIndex > 0,
             hasMoreNewer: lastIndex < messagesLength,
         };
@@ -165,6 +166,7 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
             type: 'LOADING_CHAT_CONTENT',
             chatId,
             messages: allMessages.slice(startIndex, lastIndex),
+            pivotMessageId: anchorMessageId,
             hasMoreOlder: startIndex > 0,
             hasMoreNewer: true,
         };
@@ -178,6 +180,7 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
             type: 'LOADING_CHAT_CONTENT',
             chatId,
             messages: allMessages.slice(startIndex, lastIndex),
+            pivotMessageId: anchorMessageId,
             hasMoreOlder: true,
             hasMoreNewer: lastIndex < messagesLength,
         };

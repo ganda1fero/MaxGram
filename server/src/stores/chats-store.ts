@@ -1,7 +1,8 @@
-import { type Chat } from "../types/chat.js"
-import { type ChatToJSON } from "../types/chat.js";
+import type { Chat } from "../types/chat.js"
+import type { StringifiedChat } from "../types/chat.js";
 import type { UUID } from "node:crypto";
 import fs from 'node:fs/promises';
+import { messagesStore } from "./messages-store.js";
 
 class ChatsStorage {
     private _chatsList: Chat[] = [];
@@ -11,10 +12,17 @@ class ChatsStorage {
 
     async save() {
         try {
-            const dataToSave: ChatToJSON[] = this._chatsList.map(chat => ({
-                ...chat,
-                participants: Array.from(chat.participants),
-            }));
+            const dataToSave: StringifiedChat[] = this._chatsList.map(chat => {
+                const { messages, participants, ...rest } = chat;
+                const stringifiedChat = {
+                    ...rest,
+                    participants: Array.from(participants, ([userId, value]) => ({
+                        userId,
+                        lastReadedMessageId: value.lastReadedMessageId ?? undefined,
+                    })),
+                }
+                return stringifiedChat;
+            });
             await fs.writeFile(this.SAVE_PATH, JSON.stringify(dataToSave, null, 2));
         }
         catch(error) {
@@ -25,10 +33,11 @@ class ChatsStorage {
     async init(): Promise<void> {
         try {
             const fileData = await fs.readFile(this.SAVE_PATH, 'utf-8');
-            const rawChats: ChatToJSON[] = JSON.parse(fileData);
+            const rawChats: StringifiedChat[] = JSON.parse(fileData);
             const chats: Chat[] = rawChats.map(rawChat => ({
                 ...rawChat,
-                participants: new Set(rawChat.participants),
+                participants: new Map(rawChat.participants.map(p => [p.userId, { lastReadedMessageId: p.lastReadedMessageId ?? undefined }])),
+                messages: messagesStore.getMessagesList(rawChat.ID),
             }));
 
             chats.forEach(chat => {
@@ -53,10 +62,10 @@ class ChatsStorage {
 
         this._chatsList.push(chat);
         this._chatsMap.set(chat.ID, chat);
-        for (const userID of chat.participants) {
-            if (!this._userToChatsMap.has(userID)) this._userToChatsMap.set(userID, new Set());
+        for (const [userId] of chat.participants) {
+            if (!this._userToChatsMap.has(userId)) this._userToChatsMap.set(userId, new Set());
 
-            this._userToChatsMap.get(userID)!.add(chat);
+            this._userToChatsMap.get(userId)!.add(chat);
         }
 
         return true;

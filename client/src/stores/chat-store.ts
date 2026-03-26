@@ -10,7 +10,7 @@ import { useWebSocketStore } from "./useWebSocketStore";
 
 export const useChatStore = defineStore('chat', () => {
     // --- state
-    const chats = new Map<UUID, Ref<Chat>>();
+    const chats = ref(new Map<UUID, Chat>());
 
     const LRUcache = new Set<UUID>();
     const MAX_CHATS_COUNT = 50;
@@ -19,7 +19,7 @@ export const useChatStore = defineStore('chat', () => {
     
     // --- getters
     const getChat = (chatId: UUID): Chat => {
-        const existing = chats.get(chatId);
+        const existing = chats.value.get(chatId);
         if (!existing) {
             const newChat: Chat = {
                 ID: chatId,
@@ -36,28 +36,28 @@ export const useChatStore = defineStore('chat', () => {
             return newChat;
         }
 
-        LRUcache.delete(existing.value.ID);
-        LRUcache.add(existing.value.ID);
+        LRUcache.delete(existing.ID);
+        LRUcache.add(existing.ID);
         
-        return existing.value; 
+        return existing; 
     }
 
     // --- actions
     const addChat = (chat: Chat): boolean => {
-        const existing = chats.get(chat.ID);
+        const existing = chats.value.get(chat.ID);
         if (existing) {
             console.log("This chat already exists");
             return false;
         }
 
-        chats.set(chat.ID, ref(chat));
+        chats.value.set(chat.ID, chat);
         
         LRUcache.add(chat.ID);
         if (LRUcache.size > MAX_CHATS_COUNT) {
             const firstKey = LRUcache.keys().next().value;
             if (firstKey) {
                 LRUcache.delete(firstKey);
-                chats.delete(firstKey);
+                chats.value.delete(firstKey);
             }
         }
 

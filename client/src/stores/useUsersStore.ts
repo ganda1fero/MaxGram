@@ -50,16 +50,9 @@ export const useUsersStore = defineStore('users', () => {
     };
 
     const upsertUser = (userData: Partial<User> & { readonly ID: UUID }): void => {
-        const existing = users.value.get(userData.ID);
-
-        if (existing) {
-            users.value.delete(userData.ID);
-            users.value.set(userData.ID, existing);
-
-            Object.assign(existing, userData);
-        } else {
-            addUser(userData);
-        }
+        const existing = getUser(userData.ID);
+        
+        Object.assign(existing, userData);
     };
 
     const userRequest = (uuid: UUID) => {

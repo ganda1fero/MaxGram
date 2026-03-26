@@ -6,13 +6,6 @@ class MessagesStore {
     private _messagesByChat: Map<UUID, Message[]> = new Map(); // chat UUID
     private readonly SAVE_PATH = './saves/messages.json';
 
-    private addToMap(msg: Message): void {
-        if (!this._messagesByChat.has(msg.CHAT_ID))
-            this._messagesByChat.set(msg.CHAT_ID, []);
-
-        this._messagesByChat.get(msg.CHAT_ID)!.push(msg);
-    }
-
     async save(): Promise<void> {
         try {
             const messagesList: { CHAT_ID: UUID, messages: Message[] }[] 
@@ -46,12 +39,22 @@ class MessagesStore {
     }
 
     addMessage(msg: Message): void {
-        this.addToMap(msg);
-        // тут логика обновления чата (lastMessage, updatedAt)
+        if (!this._messagesByChat.has(msg.CHAT_ID)) // create new list if it's not exits
+            this._messagesByChat.set(msg.CHAT_ID, []); 
+
+        this._messagesByChat.get(msg.CHAT_ID)!.push(msg);
+
+        // тут вызов логики обновления чата (lastMessage, updatedAt)
     }
 
     getMessagesList(chatId: UUID): Message[] {
-        return this._messagesByChat.get(chatId) || [];
+        let existing = this._messagesByChat.get(chatId);
+        if (!existing) {
+            existing = [];
+            this._messagesByChat.set(chatId, existing);
+        }
+
+        return existing;
     }
 }
 

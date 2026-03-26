@@ -1,7 +1,7 @@
 import type { Chat } from "@/types/chat";
 import type { UUID } from "@/types/UUID";
-import type { Ref } from 'vue'
 import type { GetChatPacket } from "@/types/web-socket/client/get-chat-packet";
+import type { GetAllChatsPacket } from "@/types/web-socket/client/get-all-chats-packet";
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
@@ -76,7 +76,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const upsertChat = (chatData: Partial<Chat> & { readonly ID: UUID }): void => {
         const chat = getChat(chatData.ID);
-        
+
         Object.assign(chat, chatData);
     }
 
@@ -89,5 +89,16 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getChatPacketObj);
     }
 
-    return { getChat, getSortedChatsId };
+    const fetchGetAllChats = (): void => {
+        const getAllChatsPacketObj: GetAllChatsPacket = {
+            type: 'GET_ALL_CHATS',
+        };
+
+        socketStore.send(getAllChatsPacketObj);
+    }
+
+    // --- boot
+    fetchGetAllChats();
+
+    return { getChat, getSortedChatsId, upsertChat };
 });

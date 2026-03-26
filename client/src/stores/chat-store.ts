@@ -4,7 +4,7 @@ import type { Ref } from 'vue'
 import type { GetChatPacket } from "@/types/web-socket/client/get-chat-packet";
 
 import { defineStore } from "pinia";
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useWebSocketStore } from "./useWebSocketStore";
 
 
@@ -42,6 +42,16 @@ export const useChatStore = defineStore('chat', () => {
         return existing; 
     }
 
+    const getSortedChatsId = computed(() => {
+        const chatList = Array.from(chats.value.entries())
+            .sort(([, chatA], [, chatB]) => {
+                return chatB.updatedAt - chatA.updatedAt;
+            })
+            .map(([id]) => id);
+        
+        return chatList;
+    });
+
     // --- actions
     const addChat = (chat: Chat): boolean => {
         const existing = chats.value.get(chat.ID);
@@ -73,5 +83,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getChatPacketObj);
     }
 
-    return { getChat };
+    return { getChat, getSortedChatsId };
 });

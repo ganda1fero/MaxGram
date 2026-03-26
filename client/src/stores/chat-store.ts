@@ -74,6 +74,12 @@ export const useChatStore = defineStore('chat', () => {
         return true;
     }
 
+    const upsertChat = (chatData: Partial<Chat> & { readonly ID: UUID }): void => {
+        const chat = getChat(chatData.ID);
+        
+        Object.assign(chat, chatData);
+    }
+
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
             type: 'GET_CHAT',

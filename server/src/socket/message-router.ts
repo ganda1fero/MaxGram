@@ -5,6 +5,8 @@ import type { AckAuth } from '../types/web-socked/server/ack-auth.js';
 import type { AckGetUser } from '../types/web-socked/server/ack-get-user.js';
 import type { AckSearchUsers } from '../types/web-socked/server/ack-search-users.js';
 import type { AckGetChatContent } from '../types/web-socked/server/ack-get-chat-content.js';
+import type { AckGetChat } from '../types/web-socked/server/ack-get-chat.js';
+import type { AckGetAllChats } from '../types/web-socked/server/ack-get-all-chats.js';
 
 import type { User } from '../types/user.js';
 import { connectionsStore } from '../stores/connections-store.js';
@@ -23,7 +25,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -36,6 +38,12 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'GET_CHAT_CONTENT':
             wrapResponse<AckGetChatContent>(data, ws, getChatContent);
+            break;
+        case 'GET_CHAT':
+            wrapResponse<AckGetChat>(data, ws, getChat);
+            break;
+        case 'GET_ALL_CHATS':
+            wrapResponse<AckGetAllChats>(data, ws, getAllChats);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -188,4 +196,44 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
 
     console.warn("loadOlder and loadNewer are empty");
     return {} as AckGetChatContent;
+}
+
+function getChat(payLoad: any, ws: WebSocketWithIp): AckGetChat {
+    const { chatId } = payLoad;
+
+    const chat = chatsStorage.getChat(chatId);
+    if (!chat) {
+        console.warn("chat is not exists");
+        return {} as AckGetChat;
+    }
+
+    const { ID, type, title, lastMessage, messages, updatedAt } = chat;
+    const selfUserId = connectionsStore.getUserUUID(ws)!;
+
+    const getChatObj: AckGetChat = {
+        type: 'GET_CHAT',
+        payLoad: {
+            ID,
+            type,
+            title,
+            participants: [...chat.participants.keys()].filter(userId => userId !== selfUserId),
+            lastMessage,
+            messages: messages || [],
+            updatedAt,
+        },
+    }
+    
+    return getChatObj;
+}
+
+function getAllChats(payLoad: any, ws: WebSocketWithIp): AckGetAllChats {
+    const selfUserId = connectionsStore.getUserUUID(ws)!;
+
+    const chatsSet = chatsStorage.getUserChatsSet(selfUserId);
+
+    const ackGetAllChatsObj: AckGetAllChats = {
+        type: 'GET_ALL_CHATS',
+        chats: !!chatsSet ? Array.from(chatsSet, chat => chat.ID) : [],
+    }
+    return ackGetAllChatsObj;
 }

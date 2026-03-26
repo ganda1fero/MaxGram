@@ -227,6 +227,7 @@ function getChat(payLoad: any, ws: WebSocketWithIp): AckGetChat {
 }
 
 function getAllChats(payLoad: any, ws: WebSocketWithIp): AckGetAllChats {
+    payLoad.type; // dummy acces to unused variable 
     const selfUserId = connectionsStore.getUserUUID(ws)!;
 
     const chatsSet = chatsStorage.getUserChatsSet(selfUserId);

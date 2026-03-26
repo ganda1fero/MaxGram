@@ -2,6 +2,7 @@ import type { Chat } from "@/types/chat";
 import type { UUID } from "@/types/UUID";
 import type { GetChatPacket } from "@/types/web-socket/client/get-chat-packet";
 import type { GetAllChatsPacket } from "@/types/web-socket/client/get-all-chats-packet";
+import type { GetPrivateChatIdPacket } from "@/types/web-socket/client/get-private-chat-id-packet";
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
@@ -117,8 +118,17 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getAllChatsPacketObj);
     }
 
+    const fetchGetPrivateChatId = (otherUserId: UUID) => {
+        const getPrivateChatIdPacketObj: GetPrivateChatIdPacket = {
+            type: 'GET_PRIVATE_CHAT_ID',
+            otherUserId,
+        }
+
+        socketStore.send(getPrivateChatIdPacketObj);
+    }
+
     // --- boot
     fetchGetAllChats();
 
-    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat };
+    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId };
 });

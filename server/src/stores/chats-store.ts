@@ -1,5 +1,5 @@
 import type { Chat } from "../types/chat.js"
-import type { StringifyChat } from "../types/chat.js";
+import type { StringifiedChat } from "../types/chat.js";
 import type { UUID } from "node:crypto";
 import fs from 'node:fs/promises';
 import { messagesStore } from "./messages-store.js";
@@ -12,16 +12,16 @@ class ChatsStorage {
 
     async save() {
         try {
-            const dataToSave: StringifyChat[] = this._chatsList.map(chat => {
+            const dataToSave: StringifiedChat[] = this._chatsList.map(chat => {
                 const { messages, participants, ...rest } = chat;
-                const stringifyChat = {
+                const stringifiedChat = {
                     ...rest,
                     participants: Array.from(participants, ([userId, value]) => ({
                         userId,
                         lastReadedMessageId: value.lastReadedMessageId ?? undefined,
                     })),
                 }
-                return stringifyChat;
+                return stringifiedChat;
             });
             await fs.writeFile(this.SAVE_PATH, JSON.stringify(dataToSave, null, 2));
         }
@@ -33,7 +33,7 @@ class ChatsStorage {
     async init(): Promise<void> {
         try {
             const fileData = await fs.readFile(this.SAVE_PATH, 'utf-8');
-            const rawChats: StringifyChat[] = JSON.parse(fileData);
+            const rawChats: StringifiedChat[] = JSON.parse(fileData);
             const chats: Chat[] = rawChats.map(rawChat => ({
                 ...rawChat,
                 participants: new Map(rawChat.participants.map(p => [p.userId, { lastReadedMessageId: p.lastReadedMessageId ?? undefined }])),

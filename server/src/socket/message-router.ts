@@ -7,8 +7,10 @@ import type { AckSearchUsers } from '../types/web-socked/server/ack-search-users
 import type { AckGetChatContent } from '../types/web-socked/server/ack-get-chat-content.js';
 import type { AckGetChat } from '../types/web-socked/server/ack-get-chat.js';
 import type { AckGetAllChats } from '../types/web-socked/server/ack-get-all-chats.js';
+import type { AckGetPrivateChatId } from '../types/web-socked/server/ack-get-private-chat-id.js';
 
 import type { User } from '../types/user.js';
+import type { Chat } from '../types/chat.js';
 import { connectionsStore } from '../stores/connections-store.js';
 import { usersStore } from "../stores/users-store.js";
 import { randomUUID } from 'node:crypto';
@@ -25,7 +27,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -44,6 +46,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'GET_ALL_CHATS':
             wrapResponse<AckGetAllChats>(data, ws, getAllChats);
+            break;
+        case 'GET_PRIVATE_CHAT_ID':
+            wrapResponse<AckGetPrivateChatId>(data, ws, getPrivateChatId);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -237,4 +242,32 @@ function getAllChats(payLoad: any, ws: WebSocketWithIp): AckGetAllChats {
         chats: !!chatsSet ? Array.from(chatsSet, chat => chat.ID) : [],
     }
     return ackGetAllChatsObj;
+}
+
+function getPrivateChatId(payLoad: any, ws: WebSocketWithIp): AckGetPrivateChatId {
+    const selfUserId = connectionsStore.getUserUUID(ws)!;
+    const { otherUserId } = payLoad;
+
+    let existChat = chatsStorage.getDirectChat(selfUserId, otherUserId);
+    if (!existChat) { // reacte new direct chat
+        const newChat: Chat = {
+            ID: crypto.randomUUID(),
+            type: 'private',
+            participants: new Map([ [selfUserId, {}], [otherUserId, {}] ]),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        chatsStorage.addChat(newChat);
+        existChat = newChat;
+        
+        // push all the active participants
+    }
+
+    const AckGetPrivateChatIdObj: AckGetPrivateChatId = {
+        type: 'GET_PRIVATE_CHAT_ID',
+        chatId: existChat.ID,
+    };
+
+    return AckGetPrivateChatIdObj;
 }

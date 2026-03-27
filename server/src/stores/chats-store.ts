@@ -8,6 +8,7 @@ class ChatsStorage {
     private _chatsList: Chat[] = [];
     private _chatsMap: Map<UUID, Chat> = new Map();
     private _userToChatsMap: Map<UUID, Set<Chat>> = new Map();  // user UUID
+    private _directChats: Map<string, Chat> = new Map(); // string = sorted(userId, otherUserID)
     private readonly SAVE_PATH = './saves/chats.json';
 
     async save() {
@@ -67,6 +68,10 @@ class ChatsStorage {
 
             this._userToChatsMap.get(userId)!.add(chat);
         }
+        if (chat.type === 'private' && chat.participants.size === 2) {
+            const directChatId = [...chat.participants.keys()].sort().join(':');
+            this._directChats.set(directChatId, chat); 
+        }
 
         return true;
     }
@@ -76,6 +81,10 @@ class ChatsStorage {
     }
     getUserChatsSet(userID: UUID): Set<Chat> | undefined {
         return this._userToChatsMap.get(userID);
+    }
+    getDirectChat(userId: UUID, otherUserId: UUID): Chat | undefined {
+        const directChatId = [userId, otherUserId].sort().join(':');
+        return this._directChats.get(directChatId);
     }
 }
 

@@ -63,7 +63,7 @@
     
     const openPrivateChatRequest = throttle((userId: UUID) => {
         chatStore.fetchGetPrivateChatId(userId);
-    }, 200);
+    }, 500);
 
 
     watch(() => props.input, () => {    // changed input text

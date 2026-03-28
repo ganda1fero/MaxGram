@@ -13,6 +13,7 @@ export const useWebSocketStore = defineStore('socket', () => {
     let socket: WebSocket | null = null;
     let retryCount = 0;
     const pendingRequests: Map<UUID, string> = new Map();
+
     const authStore = useAuthStore();
     
     // --- getters
@@ -31,7 +32,7 @@ export const useWebSocketStore = defineStore('socket', () => {
                 await authStore.authentificate();
             }
 
-            reSend();
+            reSend();   // resend all the missing messages
         };
         socket.onmessage = (event) => {
             console.log(`New mesage: ${event.data}`);

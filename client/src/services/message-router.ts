@@ -45,6 +45,9 @@ function ackAuth(payLoad: AckAuth): void {
 
     authStore.setUUID(payLoad.UUID);
     authStore.confirmAuth();
+
+    const chatStore = useChatStore();
+    chatStore.initChatsList();
 }
 
 function ackGetUser(payLoad: AckGetUser): void {

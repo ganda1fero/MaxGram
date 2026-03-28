@@ -101,6 +101,14 @@ export const useChatStore = defineStore('chat', () => {
         activeChat.value = null;
     }
 
+    const initChatsList = (): void => {
+        const getAllChatsPacketObj: GetAllChatsPacket = {
+            type: 'GET_ALL_CHATS',
+        };
+
+        socketStore.sendUnreliable(getAllChatsPacketObj);
+    }
+
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
             type: 'GET_CHAT',
@@ -108,14 +116,6 @@ export const useChatStore = defineStore('chat', () => {
         };
 
         socketStore.send(getChatPacketObj);
-    }
-
-    const fetchGetAllChats = (): void => {
-        const getAllChatsPacketObj: GetAllChatsPacket = {
-            type: 'GET_ALL_CHATS',
-        };
-
-        socketStore.send(getAllChatsPacketObj);
     }
 
     const fetchGetPrivateChatId = (otherUserId: UUID) => {
@@ -127,8 +127,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    // --- boot
-    fetchGetAllChats();
-
-    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId };
+    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList };
 });

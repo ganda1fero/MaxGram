@@ -1,10 +1,9 @@
 <script setup lang="ts">
     import { Menu } from 'lucide-vue-next';
     import { ArrowLeft } from 'lucide-vue-next'; 
+    import { useUiStore } from '@/stores/ui-store';
 
-    const props = defineProps<{
-        isMenu: boolean,
-    }>();
+    const uiStore = useUiStore();
 
     const emit = defineEmits<{
         (e: 'click'): void
@@ -14,10 +13,10 @@
 <template>
     <button class="sidebar-button" @click="$emit('click')">
         <Transition name="menu">
-            <Menu class="button-icon" v-if="isMenu" />
+            <Menu class="button-icon" v-if="uiStore.isSearchMode" />
         </Transition>
         <Transition name="back">
-            <ArrowLeft class="button-icon" v-if="!isMenu" />
+            <ArrowLeft class="button-icon" v-if="!uiStore.isSearchMode" />
         </Transition>
     </button>
     

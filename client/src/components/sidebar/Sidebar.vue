@@ -2,6 +2,7 @@
     import { ref } from 'vue';
     import { useSearchStore } from '@/stores/useSearchStore';
     import { useWebSocketStore } from '@/stores/useWebSocketStore';
+    import { useUiStore } from '@/stores/ui-store';
     import SidebarButton from '../buttons/SidebarButton.vue';
     import SearchInput from '../input-fields/SearchInput.vue';
     import ChatList from './SidebarChatList.vue';
@@ -9,15 +10,17 @@
 
     const searchStore = useSearchStore();
     const socketStore = useWebSocketStore();
+    const uiStore = useUiStore();
 
-    const isMenu = ref<boolean>(true);
     const input = ref<string>('');
     
     const menuButtonLogic = () => {
-        if (isMenu.value) {
+        if (uiStore.isSearchMode) {
+            
+            // open modal menu
 
         } else {
-            isMenu.value = true;
+            uiStore.isSearchMode = true;
             searchStore.setResults([]);
         }
     }
@@ -28,17 +31,16 @@
         <div class="sidebar-header">
             <div class="menu-button-wrapper">
                 <SidebarButton 
-                    :is-menu="isMenu"
                     @click="menuButtonLogic()"
                 />
             </div>
-            <SearchInput @focus="isMenu = false" v-model:input="input" :is-reconnect="!socketStore.isConnected()"/>
+            <SearchInput @focus="uiStore.isSearchMode = false" v-model:input="input" :is-reconnect="!socketStore.isConnected()"/>
         </div>
         <Transition name="chat-list">
-            <ChatList v-if="isMenu" />
+            <ChatList v-if="uiStore.isSearchMode" />
         </Transition>
         <Transition name="search-list">
-            <SearchList v-if="!isMenu" :input="input" />
+            <SearchList v-if="!uiStore.isSearchMode" :input="input" />
         </Transition>
     </div>
 </template>

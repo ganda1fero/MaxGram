@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref } from 'vue';
+    import { ref, watch } from 'vue';
     import { useSearchStore } from '@/stores/useSearchStore';
     import { useWebSocketStore } from '@/stores/useWebSocketStore';
     import { useUiStore } from '@/stores/ui-store';
@@ -24,6 +24,10 @@
             searchStore.setResults([]);
         }
     }
+
+    watch(() => uiStore.isSearchMode, (newSearchState) => {
+        if (!newSearchState) input.value = '';
+    });
 
 </script>
 <template>

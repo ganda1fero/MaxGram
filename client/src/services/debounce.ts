@@ -1,4 +1,4 @@
-function debounce<T extends (...args: any[]) => any>(fn: T, delayMs: number = 100) {
+export function debounce<T extends (...args: any[]) => any>(fn: T, delayMs: number = 100) {
     let timeoutPtr: number | null = null;
 
     const debouncedFn = function(this: any, ...args: Parameters<T>){

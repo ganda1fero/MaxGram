@@ -15,12 +15,12 @@
     const input = ref<string>('');
     
     const menuButtonLogic = () => {
-        if (uiStore.isSearchMode) {
+        if (!uiStore.isSearchMode) {
             
             // open modal menu
 
         } else {
-            uiStore.isSearchMode = true;
+            uiStore.isSearchMode = false;
             searchStore.setResults([]);
         }
     }
@@ -34,13 +34,17 @@
                     @click="menuButtonLogic()"
                 />
             </div>
-            <SearchInput @focus="uiStore.isSearchMode = false" v-model:input="input" :is-reconnect="!socketStore.isConnected()"/>
+            <SearchInput 
+                @focus="uiStore.isSearchMode = true"
+                v-model:input="input"
+                :is-reconnect="!socketStore.isConnected()"
+            />
         </div>
         <Transition name="chat-list">
-            <ChatList v-if="uiStore.isSearchMode" />
+            <ChatList v-if="!uiStore.isSearchMode" />
         </Transition>
         <Transition name="search-list">
-            <SearchList v-if="!uiStore.isSearchMode" :input="input" />
+            <SearchList v-if="uiStore.isSearchMode" :input="input" />
         </Transition>
     </div>
 </template>

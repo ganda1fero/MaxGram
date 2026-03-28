@@ -3,11 +3,14 @@ import type { AckAuth } from "@/types/web-socket/server/ack-auth";
 import type { AckGetUser } from "@/types/web-socket/server/ack-get-user";
 import type { AckSearchUsers } from "@/types/web-socket/server/ack-search-users";
 import type { AckGetChatContent } from "@/types/web-socket/server/ack-get-chat-content";
+import type { AckGetPrivateChatId } from "@/types/web-socket/server/ack-get-private-chat-id";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
 import { useSearchStore } from "@/stores/useSearchStore";
 import { useChatContentStore } from "@/stores/chat-content-store";
+import { useChatStore } from "@/stores/chat-store";
+import { useUiStore } from "@/stores/ui-store";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -27,6 +30,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'LOADING_CHAT_CONTENT':
             ackLoadingChatContent(payLoad);
+            break;
+        case 'GET_PRIVATE_CHAT_ID':
+            ackGetPrivateChatId(payLoad);
             break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
@@ -82,4 +88,16 @@ function ackLoadingChatContent(payLoad: AckGetChatContent ): void {
     } else {
         console.warn('pivot message is not first or last elem in messages list');
     }
+}
+
+function ackGetPrivateChatId(payLoad: AckGetPrivateChatId): void {
+    const chatStore = useChatStore();
+    const uiStore = useUiStore();
+    const searchStore = useSearchStore();
+
+    const { chatId } = payLoad;
+
+    chatStore.openChat(chatId);
+    uiStore.isSearchMode = false;
+    searchStore.setResults([]);
 }

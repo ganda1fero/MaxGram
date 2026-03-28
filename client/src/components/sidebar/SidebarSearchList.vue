@@ -2,14 +2,17 @@
 
     import type { SearchUsersPacket } from '@/types/web-socket/client/search-users-packet';
     import type { User } from '@/types/user';
+    import type { UUID } from '@/types/UUID';
     
     import { ref, watch, computed, type ComputedRef } from 'vue'
     import { picklist } from '@/components/sidebar/searchPicklist';
     import { debounce } from '@/services/debounce';
+    import { throttle } from '@/services/throttle';
 
     import { useSearchStore } from '@/stores/useSearchStore';
     import { useWebSocketStore } from '@/stores/useWebSocketStore';
     import { useUsersStore } from '@/stores/useUsersStore';
+    import { useChatStore } from '@/stores/chat-store';
 
     import TypeItem from '@/components/sidebar/ui/TypeItem.vue';
     import UserItem from '@/components/sidebar/ui/UserItem.vue';
@@ -21,6 +24,7 @@
     const searchStore = useSearchStore();
     const socketStore = useWebSocketStore();
     const usersStore = useUsersStore();
+    const chatStore = useChatStore();
 
     const selectedSearchTypeId = ref<number>(picklist[0]!.id);
     
@@ -56,6 +60,10 @@
 
         socketStore.send(request);
     }, 500);
+    
+    const openPrivateChatRequest = throttle((userId: UUID) => {
+        chatStore.fetchGetPrivateChatId(userId);
+    }, 200);
 
 
     watch(() => props.input, () => {    // changed input text
@@ -83,7 +91,12 @@
             />
         </div>
         <div class="found-list">
-            <UserItem v-for="user in foundUsers" :user="user" />
+            <UserItem 
+                v-for="user in foundUsers"
+                :id="user.ID"
+                :user="user" 
+                @click="openPrivateChatRequest(user.ID)"
+            />
         </div>
     </div>
 </template>

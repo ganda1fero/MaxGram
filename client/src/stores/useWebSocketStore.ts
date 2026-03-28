@@ -67,18 +67,30 @@ export const useWebSocketStore = defineStore('socket', () => {
         }, delay);
     };
 
-    const send = <T = Object>(data: T) => {
+    const send = <T extends object>(data: T) => {
         const msgId = crypto.randomUUID();
-        const packetObj = {
+        const packetObj: Packet<T> = {
             msgId,
             payLoad: data,
-        } as Packet<T>;
+        };
         const packet = JSON.stringify(packetObj);
 
         pendingRequests.set(msgId, packet);
-        if (socketStatus.value === 'OPEN') {
+        if (isConnected()) {
             socket!.send(packet);
         }
+    };
+
+    const sendUnreliable = <T extends object>(data: T): void => {
+        if (!isConnected()) return;
+
+        const packetObj: Packet<T> = {
+            msgId: '_',
+            payLoad: data,
+        };
+        const packet = JSON.stringify(packetObj);
+
+        socket!.send(packet);
     };
 
     const reSend = () => {
@@ -92,5 +104,5 @@ export const useWebSocketStore = defineStore('socket', () => {
     // --- boot
     connect();
 
-    return { send, isConnected }; // public field
+    return { send, sendUnreliable, isConnected }; // public field
 });

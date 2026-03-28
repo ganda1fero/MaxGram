@@ -2,11 +2,15 @@
 
     import type { SearchUsersPacket } from '@/types/web-socket/client/search-users-packet';
     import type { User } from '@/types/user';
+    
     import { ref, watch, computed, type ComputedRef } from 'vue'
     import { picklist } from '@/components/sidebar/searchPicklist';
+    import { debounce } from '@/services/debounce';
+
     import { useSearchStore } from '@/stores/useSearchStore';
     import { useWebSocketStore } from '@/stores/useWebSocketStore';
     import { useUsersStore } from '@/stores/useUsersStore';
+
     import TypeItem from '@/components/sidebar/ui/TypeItem.vue';
     import UserItem from '@/components/sidebar/ui/UserItem.vue';
 
@@ -44,38 +48,21 @@
         });
     });
 
-    let timeoutPtr: number | null = null;
-    const debounce = (f: (query: string) => void, delay: number) => {
-        return (query: string): void => {
-            if (timeoutPtr) {
-                clearTimeout(timeoutPtr);
-            }
-            timeoutPtr = setTimeout(() => {
-                timeoutPtr = null;
-                f(query);
-            }, delay);
-        };
-    };
-
-    let searchRequest = (query: string) => {
-        const request: SearchUsersPacket | any = {
+    const { debouncedFn: searchRequest, cancelTimeout } = debounce((query: string) => {
+        const request: SearchUsersPacket | any = {  // del `any` when the other types will be ready
             type: getSearchType.value,
             query,
         };
 
         socketStore.send(request);
-    }
-    searchRequest = debounce(searchRequest, 500);
+    }, 500);
 
 
     watch(() => props.input, () => {    // changed input text
         if (!!props.input) searchRequest(props.input);
         else { 
             searchStore.setResults([]); // clear results
-            if (timeoutPtr) {   // delete last request
-                clearTimeout(timeoutPtr);
-                timeoutPtr = null;
-            }
+            cancelTimeout(); // clear timeout (if it exist)
         }
     });
     watch(selectedSearchTypeId, () => { // changed type of search

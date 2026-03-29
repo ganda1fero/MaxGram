@@ -14,7 +14,7 @@ class ChatsStorage {
     async save() {
         try {
             const dataToSave: StringifiedChat[] = this._chatsList.map(chat => {
-                const { messages, participants, ...rest } = chat;
+                const { participants, ...rest } = chat;
                 const stringifiedChat = {
                     ...rest,
                     participants: Array.from(participants, ([userId, value]) => ({

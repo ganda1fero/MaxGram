@@ -212,7 +212,7 @@ function getChat(payLoad: any, ws: WebSocketWithIp): AckGetChat {
         return {} as AckGetChat;
     }
 
-    const { ID, type, title, lastMessage, messages, updatedAt } = chat;
+    const { ID, type, title, lastMessage, updatedAt } = chat;
     const selfUserId = connectionsStore.getUserUUID(ws)!;
 
     const getChatObj: AckGetChat = {
@@ -223,7 +223,6 @@ function getChat(payLoad: any, ws: WebSocketWithIp): AckGetChat {
             title,
             participants: [...chat.participants.keys()].filter(userId => userId !== selfUserId),
             lastMessage,
-            messages: messages || [],
             updatedAt,
         },
     }

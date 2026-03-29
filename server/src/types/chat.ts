@@ -7,7 +7,6 @@ export type Chat = {
     title?: string | undefined, // title for public groups
     participants: Map<UUID, { lastReadedMessageId?: UUID | undefined}>, // <userId, lastReadedMessageId>
     lastMessage?: Message | undefined,
-    messages?: Message[] | undefined, // just a link
     createdAt: number, // timestamp
     updatedAt: number, // timestamp
 }

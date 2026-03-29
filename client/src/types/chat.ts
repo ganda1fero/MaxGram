@@ -8,6 +8,5 @@ export type Chat = {
     title?: string, // title for public groups
     participants: Set<UUID>, // UUID Set (users UUID)
     lastMessage?: Message,
-    messages?: Message[], // just a link
     updatedAt: number, // timestamp
 }

@@ -7,7 +7,6 @@ type AckChat = {
     title?: string | undefined,
     participants: UUID[],
     lastMessage?: Message | undefined,
-    messages: Message[],
     updatedAt: number,
 }
 

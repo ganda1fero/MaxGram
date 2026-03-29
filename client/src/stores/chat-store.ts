@@ -11,8 +11,9 @@ import { useWebSocketStore } from "./useWebSocketStore";
 
 export const useChatStore = defineStore('chat', () => {
     // --- state
-    const chats = ref(new Map<UUID, Chat>());
+    const chats = ref(new Map<UUID, Chat>(new Map()));
     const activeChat = ref<UUID | null>(null);
+    const chatIdsSet = ref<Set<UUID>>(new Set());
 
     const LRUcache = new Set<UUID>();
     const MAX_CHATS_COUNT = 50;
@@ -55,14 +56,14 @@ export const useChatStore = defineStore('chat', () => {
         return getChat(chatId);
     }
 
-    const getSortedChatsId = computed(() => {
-        const chatList = Array.from(chats.value.entries())
-            .sort(([, chatA], [, chatB]) => {
+    const getSortedChatIds = computed(() => {
+        const sortedChatsList = Array.from(chatIdsSet.value)
+            .sort((chatAId, chatBId) => {
+                const chatA = getChat(chatAId);
+                const chatB = getChat(chatBId);
                 return chatB.updatedAt - chatA.updatedAt;
-            })
-            .map(([id]) => id);
-        
-        return chatList;
+            });
+        return sortedChatsList;
     });
 
     // --- actions
@@ -108,6 +109,9 @@ export const useChatStore = defineStore('chat', () => {
 
         socketStore.sendUnreliable(getAllChatsPacketObj);
     }
+    const setChatIdsList = (newChatIdsList: UUID[]): void => {
+        chatIdsSet.value = new Set(newChatIdsList);
+    }
 
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
@@ -127,5 +131,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatsId, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList };
+    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList };
 });

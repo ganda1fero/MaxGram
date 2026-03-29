@@ -1,9 +1,11 @@
 import type { Packet } from "@/types/web-socket/packet";
+import type { UUID } from "@/types/UUID";
 import type { AckAuth } from "@/types/web-socket/server/ack-auth";
 import type { AckGetUser } from "@/types/web-socket/server/ack-get-user";
 import type { AckSearchUsers } from "@/types/web-socket/server/ack-search-users";
 import type { AckGetChatContent } from "@/types/web-socket/server/ack-get-chat-content";
 import type { AckGetPrivateChatId } from "@/types/web-socket/server/ack-get-private-chat-id";
+import type { AckGetChat } from "@/types/web-socket/server/ack-get-chat";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -11,6 +13,7 @@ import { useSearchStore } from "@/stores/useSearchStore";
 import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
+import type { Chat } from "@/types/chat";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -33,6 +36,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'GET_PRIVATE_CHAT_ID':
             ackGetPrivateChatId(payLoad);
+            break;
+        case 'GET_CHAT':
+            ackGetChat(payLoad);
             break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
@@ -103,4 +109,16 @@ function ackGetPrivateChatId(payLoad: AckGetPrivateChatId): void {
     chatStore.openChat(chatId);
     uiStore.isSearchMode = false;
     searchStore.setResults([]);
+}
+
+function ackGetChat(payLoad: AckGetChat): void {
+    const { payLoad: rawChat } = payLoad;
+    const chatData: Partial<Chat> & { ID: UUID } = {
+        ...rawChat,
+        isLoading: false,
+        participants: new Set(rawChat.participants)
+    };
+
+    const chatStore = useChatStore();
+    chatStore.upsertChat(chatData);
 }

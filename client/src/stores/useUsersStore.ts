@@ -41,7 +41,7 @@ export const useUsersStore = defineStore('users', () => {
         const gradientPair = calculateGradientPairByUUID(userData.ID);
 
         const newUser: User = {
-            isLoad: true,
+            isLoading: true,
             username: 'Unknown',
             status: 'offline',
             ...userData,

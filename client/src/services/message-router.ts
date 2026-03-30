@@ -62,8 +62,8 @@ function ackGetUser(payLoad: AckGetUser): void {
     const { type, ...other } = payLoad;
 
     usersStore.upsertUser({
-        isLoad: false,
         ...other,
+        isLoading: false,
     });
 }
 

@@ -69,7 +69,7 @@
             'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 
         & .avatar{
-            margin: 0 20px 0 15px;
+            margin: 0 15px 0 15px;
         }
         transition: all 0.15s ease-out;
         &:hover{
@@ -79,8 +79,9 @@
     .info-wrapper{
         display: flex;
         flex-direction: column;
-
         justify-content: center;
+
+        margin: 0 0 4px 0;
 
         & .username{
             font-size: 17px;

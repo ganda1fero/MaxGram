@@ -11,7 +11,7 @@
 
 </script>
 <template>
-    <div v-if="!user.isLoading" class="skeleton avatar-wrapper" :style="`width:${props.width}ps; height:${props.width}px;`"></div>
+    <div v-if="user.isLoading" class="skeleton avatar-wrapper" :style="`width:${props.width}ps; height:${props.width}px;`"></div>
     <div v-else class="avatar-wrapper" :style="`background: linear-gradient(180deg, ${topHsl} 0%, ${bottomHsl} 100%); width:${props.width}px; height:${props.width}px;`">
         <span v-if="!user.avatarUrl">{{ user.username[0]?.toUpperCase() }}</span>
         <img v-else :src="`http://localhost:8080${user.avatarUrl}`" loading="lazy">

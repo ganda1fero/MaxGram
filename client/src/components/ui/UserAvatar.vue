@@ -1,33 +1,17 @@
 <script setup lang="ts">
 
     import type { User } from '@/types/user';
-    import type { UUID } from '@/types/UUID';
 
     const props = defineProps<{
         user: User,
         width: number,
-    }>();
+    }>(); 
 
-    const getGradientPairFromUUID = (uuid: UUID): { topColor: string, bottomColor: string } => {
-        let hash = 0;
-        for (let i = 0; i < uuid.length; ++i) {
-            const char = uuid.charCodeAt(i);
-            hash = char + ((hash << 5) - hash);
-            hash = hash & hash; // bits operations in 32 bits
-        }
-
-        const hue = Math.abs(hash) % 360;
-        
-        const topColor = `hsl(${(hue + 15) % 360}, 70%, 60%)`;
-        const bottomColor = `hsl(${hue}, 65%, 45%)`;
-
-        return { topColor, bottomColor };
-    }
-    const gradientPair = getGradientPairFromUUID(props.user.ID); 
+    const { topHsl, bottomHsl } = props.user.gradientPair;
 
 </script>
 <template>
-    <div class="avatar-wrapper" :style="`background: linear-gradient(180deg, ${gradientPair.topColor} 0%, ${gradientPair.bottomColor} 100%); width:${props.width}px; height:${props.width}px;`">
+    <div class="avatar-wrapper" :style="`background: linear-gradient(180deg, ${topHsl} 0%, ${bottomHsl} 100%); width:${props.width}px; height:${props.width}px;`">
         <span v-if="!user.avatarUrl">{{ user.username[0]?.toUpperCase() }}</span>
         <img v-else :src="`http://localhost:8080${user.avatarUrl}`" loading="lazy">
         <Transition name="online-status">

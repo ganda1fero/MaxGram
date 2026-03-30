@@ -9,6 +9,8 @@
         user: User,
     }>();
 
+    const skeletonUsernameWidth = Math.floor(Math.random() * 101) + 50; // [50 ... 150]px
+
     const refNow = useNow();
 
     const timeUnits = [
@@ -40,13 +42,16 @@
 <template>
     <div class="user-container">
         <UserAvatar class="avatar" :user="props.user" :width="42" />
-        <div class="info-wrapper">
-            <div class="username">
+        <div class="info-wrapper" :style="!user.isLoading ? `margin-bottom:4px;`:``">
+            <div v-if="!user.isLoading" class="username">
                 {{ user.username }}
             </div>
-            <div class="last-active">
+            <div v-else class="username info-skeleton" :style="`width:${skeletonUsernameWidth}px;`" />
+
+            <div v-if="!user.isLoading" class="last-active">
                 {{ status }}
             </div>
+            <div v-else class="last-active info-skeleton" />
         </div>
     </div>
 </template>
@@ -81,8 +86,6 @@
         flex-direction: column;
         justify-content: center;
 
-        margin: 0 0 4px 0;
-
         & .username{
             font-size: 17px;
         }
@@ -90,6 +93,45 @@
             font-size: 13px;
             user-select: none;
             color: rgba(255, 255, 255, 0.6);
+        }
+    }
+    
+    .info-skeleton{
+        position: relative;
+        box-sizing: border-box;
+        overflow: hidden;
+        background-color: rgb(100, 100, 100);
+        border: none;
+        border-radius: 5px;
+
+        &::after{
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                110deg,
+                transparent,
+                transparent 30%,
+                rgba(255, 255, 255, 0.4) 50%,
+                transparent 70%,
+                transparent
+            );
+            transform: translateX(-100%);
+            animation: shimmer 4s infinite;
+        }
+
+        &.username{
+            height: 17px;
+        }
+        &.last-active{
+            width: 120px;
+            height: 11px;
+            margin-top: 5px;
+        }
+    }
+    @keyframes shimmer{
+        70%, 100% {
+            transform: translateX(100%);
         }
     }
 </style>

@@ -48,7 +48,7 @@
     watch(() => searchStore.getResults(), (newIds) => { // updates all users in new result 
         newIds.forEach(id => {
             const user = usersStore.getUser(id);
-            if (!user.isLoad) usersStore.userRequest(user.ID);
+            if (!user.isLoading) usersStore.userRequest(user.ID);
         });
     });
 

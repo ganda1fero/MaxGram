@@ -6,7 +6,7 @@ export type GradientPair = {
 };
 
 export type User = {
-    isLoad: boolean,
+    isLoading: boolean,
     readonly ID: UUID, // UUID
     username: string,
     avatarUrl?: string,

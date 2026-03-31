@@ -1,10 +1,12 @@
 <script setup lang="ts">
 
+    import ChatHeader from '@/components/chat/ChatHeader.vue';
     import ChatInput from '@/components/chat/ChatInput.vue';
 
 </script>
 <template>
     <div class="chat-field">
+        <ChatHeader />
         <div class="messages-field">
             
         </div>
@@ -21,8 +23,7 @@
 
         width: 100%;
         height: 100%;
-        padding: 0px;
-
+        padding: 0;
 
         border: solid red 1px;
     }

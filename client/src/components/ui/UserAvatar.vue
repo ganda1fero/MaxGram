@@ -2,12 +2,15 @@
 
     import type { User } from '@/types/user';
 
+    import { computed } from 'vue';
+
     const props = defineProps<{
         user: User,
         width: number,
     }>(); 
 
-    const { topHsl, bottomHsl } = props.user.gradientPair;
+    const topHsl = computed(() => props.user.gradientPair.topHsl);
+    const bottomHsl = computed(() => props.user.gradientPair.bottomHsl);
 
 </script>
 <template>

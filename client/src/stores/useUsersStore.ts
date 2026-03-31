@@ -9,8 +9,10 @@ import { useWebSocketStore } from "./useWebSocketStore";
 export const useUsersStore = defineStore('users', () => {
     // --- state
     const users = ref(new Map<UUID, User>());
-    let usersCount = 0;   // for LRU chache
+    
+    const LRUcache = new Set<UUID>();
     const MAX_USERS_COUNT = 100;
+
     const socketStore = useWebSocketStore();
 
     // --- getters
@@ -18,8 +20,8 @@ export const useUsersStore = defineStore('users', () => {
         const existing = users.value.get(uuid);
 
         if (existing) {
-            users.value.delete(existing.ID);
-            users.value.set(existing.ID, existing);
+            LRUcache.delete(existing.ID);
+            LRUcache.add(existing.ID);
 
             return existing;
         } else {
@@ -33,10 +35,13 @@ export const useUsersStore = defineStore('users', () => {
 
     // --- actions
     const addUser = (userData: Partial<User> & { readonly ID: UUID }): User => {
-        if (usersCount >= MAX_USERS_COUNT) {
-            const firstKey = users.value.keys().next().value;
-            if (firstKey) users.value.delete(firstKey);
-        } else usersCount++;
+        if (LRUcache.size >= MAX_USERS_COUNT) {
+            const firstKey = LRUcache.keys().next().value;
+            if (firstKey) {
+                LRUcache.delete(firstKey);
+                users.value.delete(firstKey);
+            }
+        }
         
         const gradientPair = calculateGradientPairByUUID(userData.ID);
 

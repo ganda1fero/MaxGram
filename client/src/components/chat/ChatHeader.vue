@@ -10,6 +10,7 @@
     import { useUsersStore } from '@/stores/useUsersStore';
 
     import UserAvatar from '@/components/ui/UserAvatar.vue';
+    import SearchButton from '@/components/buttons/SearchButton.vue';
 
     const chatsStore = useChatStore();
     const authStore = useAuthStore();
@@ -58,7 +59,7 @@
             <div v-else class="last-active info-skeleton" />
         </div>
 
-        
+        <SearchButton :button-width="40" :logo-width="24" class="search-button" />
     </div>
 </template>
 <style scoped>
@@ -130,5 +131,9 @@
         70%, 100% {
             transform: translateX(100%);
         }
+    }
+    .search-button{
+        display: flex;
+        margin: 0 10px 0 auto;
     }
 </style>

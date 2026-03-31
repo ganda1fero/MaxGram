@@ -1,8 +1,11 @@
 <script setup lang="ts">
     
     import type { User } from '@/types/user';
+
     import { computed } from 'vue';
     import { useNow } from '@/services/use-now';
+    import { formatLastSeen } from '@/services/format-last-seen';
+
     import UserAvatar from '@/components/ui/UserAvatar.vue';
 
     const props = defineProps<{
@@ -12,30 +15,10 @@
     const skeletonUsernameWidth = Math.floor(Math.random() * 101) + 50; // [50 ... 150]px
 
     const refNow = useNow();
-
-    const timeUnits = [
-        { name: 'year',   value: 31_536_000 },
-        { name: 'month',  value: 2_592_000 },
-        { name: 'week',   value: 604_800 },
-        { name: 'day',    value: 86_400 },
-        { name: 'hour',   value: 3_600 },
-        { name: 'minute', value: 60 },
-    ];
-
     const status = computed(() => {
         if (props.user.status === 'online') return 'online';
 
-        const difference = Math.floor((refNow.value - props.user.lastSeen!) / 1000);
-        
-        if (difference < 60) return "last seen just now";
-
-        for (const unit of timeUnits) {
-            if (difference >= unit.value) {
-                const count = Math.floor(difference / unit.value);
-                const unitName = unit.name + (count > 1 ? 's' : '');
-                return `last seen ${count} ${unitName} ago`
-            }
-        }
+        return formatLastSeen(props.user.lastSeen ?? 0, refNow.value);
     });
 
 </script>

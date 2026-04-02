@@ -44,6 +44,7 @@
         justify-content: center;
         align-items: center;
         box-sizing: border-box;
+        flex-shrink: 0;
 
         border: none;
         border-radius: 50%;

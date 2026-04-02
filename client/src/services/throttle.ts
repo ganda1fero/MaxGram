@@ -1,10 +1,10 @@
 export function throttle<T extends (...args: any[]) => any>(fn: T, limitMs: number = 100) {
-    let isThrottle = false;
-    return function (this: any, ...args: Parameters<T>) {
-        if (!isThrottle) {
-            isThrottle = true;
-            fn.apply(this, args);
-            setTimeout(() => isThrottle = false, limitMs);
+    let isThrottled = false;
+    return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+        if (!isThrottled) {
+            isThrottled = true;
+            setTimeout(() => isThrottled = false, limitMs);
+            return fn.apply(this, args);
         }
     }
 };

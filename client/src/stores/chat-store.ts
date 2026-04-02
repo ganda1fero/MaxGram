@@ -61,6 +61,11 @@ export const useChatStore = defineStore('chat', () => {
             .sort((chatAId, chatBId) => {
                 const chatA = getChat(chatAId);
                 const chatB = getChat(chatBId);
+                /*  NOTE: if chat is loading, chat.updatedAt gonna be = 0
+                    So if only one of chats is loading, second wiil be upper
+                    if both of them are loading, sorting is not performed
+                    and it will be updated after the download is completed  
+                */   
                 return chatB.updatedAt - chatA.updatedAt;
             });
         return sortedChatsList;

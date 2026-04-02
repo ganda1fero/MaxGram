@@ -18,9 +18,7 @@
     <div class="chat-input-container">
         <div class="new-message-wrapper">
             <EmojiButton :is-active="tmpIsActiveEmoji" @click="tmpIsActiveEmoji = !tmpIsActiveEmoji"/>
-            <div class="input-wrapper">
-                <MultylineInput v-model:input="tmpInputText"/>
-            </div>
+            <MultylineInput v-model:input="tmpInputText"/>
             <AddMediaButton :is-active="tmpIsActiveAddMedia" @click="tmpIsActiveAddMedia = !tmpIsActiveAddMedia"/>
         </div>
         <div class="submit-button-wrapper">
@@ -68,16 +66,6 @@
 
         padding: 0;
         margin: 0 0 1.5px 0;
-    }
-    .input-wrapper{
-        display: flex;
-
-        width: 100%;
-        max-width: 530px;
-
-        margin: 0;
-
-        background-color: transparent;
     }
     .submit-button-wrapper{
         display: flex;

@@ -109,8 +109,10 @@
     .wrapper{
         display: flex;
         position: relative;
-        width: 100%;
+        width: 100%; 
         max-width: 530px;
+        margin: 0;
+        background-color: transparent;
     }
 
     .placeholder{

@@ -12,14 +12,28 @@
     const topHsl = computed(() => props.user.gradientPair.topHsl);
     const bottomHsl = computed(() => props.user.gradientPair.bottomHsl);
 
+    const avatarSkeletonStyle = computed(() => ({
+        width: props.width + 'px',
+        height: props.width + 'px',
+        fontSize: (props.width / 2 - 3) +'px',
+    }));
+    const avatarStyle = computed(() => ({
+        ...avatarSkeletonStyle.value,
+        background: `linear-gradient(180deg, ${topHsl.value} 0%, ${bottomHsl.value} 100%)`,
+    }));
+    const onlineStatusStyle = computed(() => ({
+        width: (props.width / 6 + 2) + 'px',
+        height: (props.width / 6 + 2) + 'px',
+    }));
+
 </script>
 <template>
-    <div v-if="user.isLoading" class="avatar-skeleton avatar-wrapper" :style="`width:${props.width}px; height:${props.width}px;`"></div>
-    <div v-else class="avatar-wrapper" :style="`background: linear-gradient(180deg, ${topHsl} 0%, ${bottomHsl} 100%); width:${props.width}px; height:${props.width}px;`">
+    <div v-if="user.isLoading" class="avatar-skeleton avatar-wrapper" :style="avatarSkeletonStyle"></div>
+    <div v-else class="avatar-wrapper" :style="avatarStyle">
         <span v-if="!user.avatarUrl">{{ user.username[0]?.toUpperCase() }}</span>
         <img v-else :src="`http://localhost:8080${user.avatarUrl}`" loading="lazy">
         <Transition name="online-status">
-            <div v-if="user.status==='online'" class="online-status" />
+            <div v-if="user.status==='online'" class="online-status" :style="onlineStatusStyle" />
         </Transition>
     </div>
 </template>
@@ -31,8 +45,6 @@
         align-items: center;
         box-sizing: border-box;
 
-        width: 42px;
-        height: 42px;
         border: none;
         border-radius: 50%;
 
@@ -42,7 +54,6 @@
 
         & span{
             font-weight: bold;
-            font-size: 18px;
             color: rgba(255, 255, 255, 1);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
                 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -60,9 +71,6 @@
 
         bottom: 0;
         right: 0;
-
-        width: 9px;
-        height: 9px;
 
         background-color: rgb(0, 247, 66);
 

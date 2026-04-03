@@ -6,15 +6,13 @@ import type { Message } from "@/types/message";
 
 import { ref } from "vue";
 import { defineStore } from "pinia";
+import { LRUcache } from "@/utils/lru-cache";
 import { useWebSocketStore } from "./useWebSocketStore";
 
 
 export const useChatContentStore = defineStore('chatContent', () => {
     // --- state
-    const chatContents = new Map<UUID, Ref<ChatContent>>(); // UUID = chat uuid
-
-    const LRUcache = new Set<UUID>();   // UUID = chat uuid
-    const MAX_LRU_COUNT = 10;
+    const chatContents = new LRUcache<UUID, ChatContent>(10); // max size = 10
 
     const socketStore = useWebSocketStore();
 
@@ -34,27 +32,15 @@ export const useChatContentStore = defineStore('chatContent', () => {
             fetchStartContent(chatId);
             return newChatContent;
         }
-
-        LRUcache.delete(existing.value.chatId);
-        LRUcache.add(existing.value.chatId);
-        return existing.value;
+        
+        return existing;
     }
 
     // --- actions
     const addChatContent = (chatContent: ChatContent): boolean => {
         if (chatContents.has(chatContent.chatId)) return false;
 
-        LRUcache.add(chatContent.chatId);
-        if (LRUcache.size >= MAX_LRU_COUNT) {
-            const firstKey = LRUcache.keys().next().value;
-            if (firstKey) {
-                LRUcache.delete(firstKey);
-                chatContents.delete(firstKey);
-            }
-        }
-
-        const refChatContent: Ref<ChatContent> = ref(chatContent);
-        chatContents.set(chatContent.chatId, refChatContent);
+        chatContents.put(chatContent.chatId, chatContent);
         return true;
     }
 

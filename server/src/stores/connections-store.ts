@@ -2,6 +2,7 @@ import type { UUID } from "node:crypto";
 import { type User } from "../types/user.js";
 import { WebSocket } from 'ws'
 import { usersStore } from "./users-store.js";
+import type { Socket } from "node:dgram";
 
 class ConnectionsStote {
     private _ipConnections: Map<string, number> = new Map(); // <string...> = ip
@@ -68,6 +69,10 @@ class ConnectionsStote {
 
     getUserUUID(ws: WebSocket): UUID | undefined {
         return this._socketToUser.get(ws);
+    }
+
+    getUserSockets(userId: UUID): Set<WebSocket> | undefined {
+        return this._userToSockets.get(userId);
     }
 }
 

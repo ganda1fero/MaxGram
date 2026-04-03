@@ -111,7 +111,7 @@ function ackGetPrivateChatId(payLoad: AckGetPrivateChatId): void {
     const { chatId } = payLoad;
 
     chatStore.openChat(chatId);
-    uiStore.isSearchMode = false;
+    uiStore.sidebar.isSearchMode = false;
     searchStore.setResults([]);
 }
 

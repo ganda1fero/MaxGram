@@ -1,5 +1,7 @@
 import type { Packet } from "@/types/web-socket/packet";
 import type { UUID } from "@/types/UUID";
+import type { Chat } from "@/types/chat";
+import type { Message } from "@/types/message";
 import type { AckAuth } from "@/types/web-socket/server/ack-auth";
 import type { AckGetUser } from "@/types/web-socket/server/ack-get-user";
 import type { AckSearchUsers } from "@/types/web-socket/server/ack-search-users";
@@ -7,6 +9,8 @@ import type { AckGetChatContent } from "@/types/web-socket/server/ack-get-chat-c
 import type { AckGetPrivateChatId } from "@/types/web-socket/server/ack-get-private-chat-id";
 import type { AckGetChat } from "@/types/web-socket/server/ack-get-chat";
 import type { AckGetAllChats } from "@/types/web-socket/server/ack-get-all-chats";
+import type { AckSendMessage } from "@/types/web-socket/server/ack-send-message";
+import type { PushNewMessage } from "@/types/web-socket/server/push-new-message";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -14,7 +18,6 @@ import { useSearchStore } from "@/stores/useSearchStore";
 import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
-import type { Chat } from "@/types/chat";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -43,6 +46,13 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'GET_ALL_CHATS':
             ackGetAllChats(payLoad);
+            break;
+        case 'ACK_SEND_MESSAGE':
+        case 'DENIEN_SEND_MESSAGE':
+            ackSendMEssage(payLoad);
+            break;
+        case 'PUSH_NEW_MESSAGE':
+            pushNewMessage(payLoad);
             break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
@@ -132,4 +142,53 @@ function ackGetAllChats(payLoad: AckGetAllChats): void {
 
     const chatStore = useChatStore();
     chatStore.setChatIdsList(chatIds);
+}
+
+function ackSendMEssage(payLoad: AckSendMessage): void {
+    const { type, localId, globalId, chatId, timestamp } = payLoad;
+
+    const chatContentStore = useChatContentStore();
+    const chatContent = chatContentStore.getChatContent(chatId);
+    const message = chatContent.messages.find(msg => msg.ID === localId);
+    if (!message) {
+        console.warn("local message not found");
+        return;
+    }
+
+    if (type === 'DENIEN_SEND_MESSAGE') {
+        message.status = 'deniend';
+        return;
+    }
+
+    // type = ACK_SEND_MESSAGE
+    message.ID = globalId!,
+    delete message.status;
+    message.timestamp = timestamp!;
+    
+    return;
+}
+
+function pushNewMessage(payLoad: PushNewMessage): void {
+    const { id, chatId, senderId, text, timestamp } = payLoad;
+
+    const chatStore = useChatStore();
+    const chatContentStore = useChatContentStore();
+
+    const newMessage: Message = {
+        ID: id,
+        CHAT_ID: chatId,
+        SENDER_ID: senderId,
+        text,
+        timestamp,
+    };
+
+    const chat = chatStore.getChat(chatId);
+    chat.lastMessage = newMessage;
+    chat.updatedAt = newMessage.timestamp;
+
+    const chatContent = chatContentStore.getChatContent(chatId);
+    if (!chatContent.hasMoreNewer) 
+        chatContent.messages.push(newMessage);
+
+    return;
 }

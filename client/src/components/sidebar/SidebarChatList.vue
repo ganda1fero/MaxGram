@@ -66,7 +66,7 @@
 
     }
 
-    .chat-list.move{
+    .chat-list-move{
         transition: all 0.5s cubic-bezier(0.33, 1, 0.68, 1);
     }
 </style>

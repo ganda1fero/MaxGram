@@ -1,30 +1,36 @@
 <script setup lang="ts">
 
-    import { ref } from 'vue';
+    import { watch } from 'vue';
+    import { useUiStore } from '@/stores/ui-store';
+    import { useChatStore } from '@/stores/chat-store';
+    
     import EmojiButton from '@/components/buttons/EmojiButton.vue';
     import MultylineInput from '@/components/input-fields/MultylineInput.vue';
     import AddMediaButton from '@/components/buttons/AddMediaButton.vue';
     import SendButton from '@/components/buttons/SendButton.vue'; 
 
-    // v-model chat { OBJ }
+    const uiStore = useUiStore();
+    const chat = uiStore.chat;
 
-    const tmpInputText = ref<string>('');
-    const tmpIsActiveEmoji = ref<boolean>(false);
-    const tmpIsActiveAddMedia = ref<boolean>(false); 
-    
+    const chatStore = useChatStore();
+
+    watch(chatStore.getActiveChatId, () => {
+        chat.chatInput = ''; // clear when switch chat
+    });
+
 </script>
 <template>
     <div class="chat-input-container">
         <div class="new-message-wrapper">
-            <EmojiButton :is-active="tmpIsActiveEmoji" @click="tmpIsActiveEmoji = !tmpIsActiveEmoji"/>
-            <MultylineInput v-model:input="tmpInputText"/>
-            <AddMediaButton :is-active="tmpIsActiveAddMedia" @click="tmpIsActiveAddMedia = !tmpIsActiveAddMedia"/>
+            <EmojiButton :is-active="chat.emojiButtonState" @click="chat.emojiButtonState = !chat.emojiButtonState"/>
+            <MultylineInput v-model:input="chat.chatInput"/>
+            <AddMediaButton :is-active="chat.addMediaButtonState" @click="chat.addMediaButtonState = !chat.addMediaButtonState"/>
         </div>
         <div class="submit-button-wrapper">
             <Transition name="submit-button">
                 <SendButton 
-                    :can-send="tmpInputText.length > 0"
-                    v-if="tmpInputText.length > 0"
+                    :can-send="chat.chatInput.length > 0"
+                    v-if="chat.chatInput.length > 0"
                 />
             </Transition>
         </div>

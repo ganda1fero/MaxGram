@@ -33,6 +33,10 @@ export class LRUcache<Tkey, Tvalue>{
         this.queueSet.add(key);
     }
 
+    has(key: Tkey): boolean {
+        return this.queueSet.has(key);
+    }
+
     delete(key: Tkey): boolean {
         const existing = this.dataMap.value.get(key);
         if (existing === undefined) return false;

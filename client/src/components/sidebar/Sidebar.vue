@@ -56,6 +56,7 @@
     .sidebar-container{
         display: flex;
         flex-direction: column;
+        position: relative;
 
         width: 100%;
         height: 100%;
@@ -90,6 +91,8 @@
     .search-list-enter-active,
     .search-list-leave-active{
         transition: all 0.15s ease;
+        position: absolute;
+        top: 56px;
     }   
     .search-list-enter-from,
     .search-list-leave-to{

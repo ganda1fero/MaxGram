@@ -8,12 +8,12 @@ export const useUiStore = defineStore('ui', () => {
 
     //chat
     const chatInput = ref<string>('');
-    const EmojiButtonState = ref<boolean>(false);
-    const AddMediaButtonState = ref<boolean>(false);
+    const emojiButtonState = ref<boolean>(false);
+    const addMediaButtonState = ref<boolean>(false);
 
     // --- getters
     const sidebar = { isSearchMode };
-    const chat = { chatInput, EmojiButtonState, AddMediaButtonState };
+    const chat = { chatInput, emojiButtonState, addMediaButtonState };
     
     // --- actions
     

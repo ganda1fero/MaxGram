@@ -21,7 +21,6 @@ import { randomUUID } from 'node:crypto';
 import { chatsStorage } from '../stores/chats-store.js';
 import { messagesStore } from '../stores/messages-store.js';
 import type { PushNewMessage } from '../types/web-socked/server/push-new-message.js';
-import { glob } from 'node:fs';
 
 
 export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {

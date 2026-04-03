@@ -146,6 +146,7 @@ export const useChatStore = defineStore('chat', () => {
 
         const chat = getChat(chatId);
         chat.lastMessage = localMessage;
+        chat.updatedAt = localMessage.timestamp;
 
         uiStore.chat.chatInput = ''; // clear chat input 
 

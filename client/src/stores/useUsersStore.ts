@@ -26,14 +26,6 @@ export const useUsersStore = defineStore('users', () => {
 
     // --- actions
     const addUser = (userData: Partial<User> & { readonly ID: UUID }): User => {
-        if (LRUcache.size >= MAX_USERS_COUNT) {
-            const firstKey = LRUcache.keys().next().value;
-            if (firstKey) {
-                LRUcache.delete(firstKey);
-                users.value.delete(firstKey);
-            }
-        }
-        
         const gradientPair = calculateGradientPairByUUID(userData.ID);
 
         const newUser: User = {
@@ -44,7 +36,7 @@ export const useUsersStore = defineStore('users', () => {
             gradientPair,
         };
 
-        users.value.set(newUser.ID, newUser);
+        users.put(newUser.ID, newUser);
         return newUser;
     };
 

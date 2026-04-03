@@ -1,9 +1,10 @@
 import type { UUID } from "./UUID";
 
 export type Message = {
-    readonly ID: UUID, // UUID 
-    readonly CHAT_ID: UUID, // chat UUID
-    readonly SENDER_ID: UUID, // user UUID
+    ID: UUID, // UUID 
+    CHAT_ID: UUID, // chat UUID
+    SENDER_ID: UUID, // user UUID
     text: string,
     timestamp: number,
+    status?: 'sending' | 'deniend',
 }

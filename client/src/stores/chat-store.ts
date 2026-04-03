@@ -6,23 +6,21 @@ import type { GetPrivateChatIdPacket } from "@/types/web-socket/client/get-priva
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
+import { LRUcache } from "@/utils/lru-cache";
 import { useWebSocketStore } from "./useWebSocketStore";
 
 
 export const useChatStore = defineStore('chat', () => {
     // --- state
-    const chats = ref(new Map<UUID, Chat>(new Map()));
+    const chats = new LRUcache<UUID, Chat>(50); // max size = 50
     const activeChat = ref<UUID | null>(null);
     const chatIdsSet = ref<Set<UUID>>(new Set());
-
-    const LRUcache = new Set<UUID>();
-    const MAX_CHATS_COUNT = 50;
 
     const socketStore = useWebSocketStore();
     
     // --- getters
     const getChat = (chatId: UUID): Chat => {
-        const existing = chats.value.get(chatId);
+        const existing = chats.get(chatId);
         if (!existing) {
             const newChat: Chat = {
                 ID: chatId,
@@ -38,9 +36,6 @@ export const useChatStore = defineStore('chat', () => {
 
             return newChat;
         }
-
-        LRUcache.delete(existing.ID);
-        LRUcache.add(existing.ID);
         
         return existing; 
     }
@@ -73,22 +68,13 @@ export const useChatStore = defineStore('chat', () => {
 
     // --- actions
     const addChat = (chat: Chat): boolean => {
-        const existing = chats.value.get(chat.ID);
-        if (existing) {
+        const isExisting = chats.has(chat.ID);
+        if (isExisting) {
             console.log("This chat already exists");
             return false;
         }
 
-        chats.value.set(chat.ID, chat);
-        
-        LRUcache.add(chat.ID);
-        if (LRUcache.size > MAX_CHATS_COUNT) {
-            const firstKey = LRUcache.keys().next().value;
-            if (firstKey) {
-                LRUcache.delete(firstKey);
-                chats.value.delete(firstKey);
-            }
-        }
+        chats.put(chat.ID, chat);
 
         return true;
     }

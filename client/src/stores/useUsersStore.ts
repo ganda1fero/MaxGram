@@ -4,33 +4,24 @@ import type { GetUserPacket } from "@/types/web-socket/client/get-user-packet";
 
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { LRUcache } from "@/utils/lru-cache";
 import { useWebSocketStore } from "./useWebSocketStore";
 
 export const useUsersStore = defineStore('users', () => {
     // --- state
-    const users = ref(new Map<UUID, User>());
-    
-    const LRUcache = new Set<UUID>();
-    const MAX_USERS_COUNT = 100;
+    const users = new LRUcache<UUID, User>(100);    // max size = 100
 
     const socketStore = useWebSocketStore();
 
     // --- getters
     const getUser = (uuid: UUID): User => {
-        const existing = users.value.get(uuid);
+        const existing = users.get(uuid);
 
-        if (existing) {
-            LRUcache.delete(existing.ID);
-            LRUcache.add(existing.ID);
-
-            return existing;
-        } else {
-            const newUser = addUser( {ID: uuid } );
-            
-            userRequest(uuid);
-
-            return newUser;
-        }
+        if (existing) return existing;
+        
+        const newUser = addUser( {ID: uuid } );
+        userRequest(uuid);
+        return newUser;
     };
 
     // --- actions

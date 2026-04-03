@@ -31,6 +31,7 @@ export class LRUcache<Tkey, Tvalue>{
 
         this.queueSet.delete(key);
         this.queueSet.add(key);
+        return existing;
     }
 
     has(key: Tkey): boolean {

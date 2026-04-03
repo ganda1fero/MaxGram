@@ -9,6 +9,10 @@
     import AddMediaButton from '@/components/buttons/AddMediaButton.vue';
     import SendButton from '@/components/buttons/SendButton.vue'; 
 
+    const emit = defineEmits<{
+        (e: 'sendButton'): void,
+    }>();
+
     const uiStore = useUiStore();
     const chat = uiStore.chat;
 
@@ -23,7 +27,7 @@
     <div class="chat-input-container">
         <div class="new-message-wrapper">
             <EmojiButton :is-active="chat.emojiButtonState" @click="chat.emojiButtonState = !chat.emojiButtonState"/>
-            <MultylineInput v-model:input="chat.chatInput"/>
+            <MultylineInput v-model:input="chat.chatInput" @submit="$emit('sendButton')"/>
             <AddMediaButton :is-active="chat.addMediaButtonState" @click="chat.addMediaButtonState = !chat.addMediaButtonState"/>
         </div>
         <div class="submit-button-wrapper">
@@ -31,6 +35,7 @@
                 <SendButton 
                     :can-send="chat.chatInput.length > 0"
                     v-if="chat.chatInput.length > 0"
+                    @click="$emit('sendButton')"
                 />
             </Transition>
         </div>

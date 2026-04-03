@@ -1,13 +1,18 @@
 import type { Chat } from "@/types/chat";
 import type { UUID } from "@/types/UUID";
+import type { Message } from "@/types/message";
 import type { GetChatPacket } from "@/types/web-socket/client/get-chat-packet";
 import type { GetAllChatsPacket } from "@/types/web-socket/client/get-all-chats-packet";
 import type { GetPrivateChatIdPacket } from "@/types/web-socket/client/get-private-chat-id-packet";
+import type { SendMessagePacket } from "@/types/web-socket/client/send-message-packet";
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
 import { LRUcache } from "@/utils/lru-cache";
+import { useAuthStore } from "./useAuthStore";
 import { useWebSocketStore } from "./useWebSocketStore";
+import { useUiStore } from "./ui-store";
+import { useChatContentStore } from "./chat-content-store";
 
 
 export const useChatStore = defineStore('chat', () => {
@@ -17,6 +22,9 @@ export const useChatStore = defineStore('chat', () => {
     const chatIdsSet = ref<Set<UUID>>(new Set());
 
     const socketStore = useWebSocketStore();
+    const authStore = useAuthStore();
+    const uiStore = useUiStore();
+    const chatContentStore = useChatContentStore();
     
     // --- getters
     const getChat = (chatId: UUID): Chat => {
@@ -104,6 +112,47 @@ export const useChatStore = defineStore('chat', () => {
         chatIdsSet.value = new Set(newChatIdsList);
     }
 
+    const sendMessage = (): boolean => {
+        const chatId = activeChat.value;
+        const selfId = authStore.getUUID();
+        const input = uiStore.chat.chatInput;
+        
+        if (chatId === null) return false;
+        if (selfId === null) return false;
+        if (input.length === 0) return false;
+
+        const localId = crypto.randomUUID();
+        const sendMessagePacket: SendMessagePacket = {
+            type: 'SEND_MESSAGE',
+            localId,
+            chatId: chatId,
+            senderId: selfId,
+            text: input,
+        };
+        socketStore.send(sendMessagePacket);
+
+        const localMessage: Message = {
+            ID: localId,
+            CHAT_ID: chatId,
+            SENDER_ID: selfId,
+            text: input,
+            timestamp: Date.now(),
+        };
+
+        const chatContent = chatContentStore.getChatContent(chatId);
+        if (!chatContent.hasMoreNewer) {
+
+            chatContent.messages.push(localMessage);
+        }
+
+        const chat = getChat(chatId);
+        chat.lastMessage = localMessage;
+
+        uiStore.chat.chatInput = ''; // clear chat input 
+
+        return true;
+    }
+
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
             type: 'GET_CHAT',
@@ -122,5 +171,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList };
+    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, sendMessage };
 });

@@ -14,7 +14,6 @@
     
 </script>
 <template>
-
     <div class="chat-input-container">
         <div class="new-message-wrapper">
             <EmojiButton :is-active="tmpIsActiveEmoji" @click="tmpIsActiveEmoji = !tmpIsActiveEmoji"/>

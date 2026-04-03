@@ -1,4 +1,4 @@
-import type { UUID } from "@/types/UUID"
+import type { UUID } from "node:crypto";
 
 export type SendMessagePacket = {
     type: 'SEND_MESSAGE',

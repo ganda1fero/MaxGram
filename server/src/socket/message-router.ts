@@ -1,6 +1,7 @@
 import type { WebSocketWithIp } from '../types/web-socket-with-ip.js';
 import type { UUID } from 'node:crypto';
 import type { Packet } from "../types/web-socked/packet.js";
+import type { Message } from '../types/message.js';
 import type { AckAuth } from '../types/web-socked/server/ack-auth.js';
 import type { AckGetUser } from '../types/web-socked/server/ack-get-user.js';
 import type { AckSearchUsers } from '../types/web-socked/server/ack-search-users.js';
@@ -8,15 +9,19 @@ import type { AckGetChatContent } from '../types/web-socked/server/ack-get-chat-
 import type { AckGetChat } from '../types/web-socked/server/ack-get-chat.js';
 import type { AckGetAllChats } from '../types/web-socked/server/ack-get-all-chats.js';
 import type { AckGetPrivateChatId } from '../types/web-socked/server/ack-get-private-chat-id.js';
+import type { GetChatContentPacket } from '../types/web-socked/client/get-chat-content-packet.js';
+import type { AckSendMessage } from '../types/web-socked/server/ack-send-message.js';
 
 import type { User } from '../types/user.js';
 import type { Chat } from '../types/chat.js';
+import { sentMessageIdsResolver } from '../services/sent-message-ids-resolver.js';
 import { connectionsStore } from '../stores/connections-store.js';
 import { usersStore } from "../stores/users-store.js";
 import { randomUUID } from 'node:crypto';
-import type { GetChatContentPacket } from '../types/web-socked/client/get-chat-content-packet.js';
 import { chatsStorage } from '../stores/chats-store.js';
 import { messagesStore } from '../stores/messages-store.js';
+import type { PushNewMessage } from '../types/web-socked/server/push-new-message.js';
+import { glob } from 'node:fs';
 
 
 export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
@@ -27,7 +32,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -49,6 +54,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'GET_PRIVATE_CHAT_ID':
             wrapResponse<AckGetPrivateChatId>(data, ws, getPrivateChatId);
+            break;
+        case 'SEND_MESSAGE':
+            wrapResponse<AckSendMessage>(data, ws, sendMessage);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -269,4 +277,78 @@ function getPrivateChatId(payLoad: any, ws: WebSocketWithIp): AckGetPrivateChatI
     };
 
     return AckGetPrivateChatIdObj;
+}
+
+function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
+    const { localId, chatId, text } = payLoad;
+
+    const messagesList = messagesStore.getMessagesList(chatId);
+
+    if (sentMessageIdsResolver.has(localId)) {
+        const globalId = sentMessageIdsResolver.get(localId)!;
+        const ackSendMessage: AckSendMessage = {
+            type: 'ACK_SEND_MESSAGE',
+            localId,
+            globalId,
+            chatId,
+            timestamp: messagesList.find(message => message.ID === globalId)?.timestamp ?? Date.now(),
+        };
+        return ackSendMessage;
+    }
+
+    const chat = chatsStorage.getChat(chatId);
+    const selfId = connectionsStore.getUserUUID(ws)!;
+    if (!chat?.participants?.has(selfId)) {
+        const ackSendMessage: AckSendMessage = {
+            type: 'DENIEN_SEND_MESSAGE',
+            localId,
+            chatId,
+        };
+        return ackSendMessage;
+    }
+
+    const globalId = randomUUID();
+    const newMessage: Message = {
+        ID: globalId,
+        CHAT_ID: chatId,
+        SENDER_ID: selfId,
+        text,
+        timestamp: Date.now(),
+    };
+    messagesStore.addMessage(newMessage);
+    chat.lastMessage = newMessage;
+    chat.updatedAt = newMessage.timestamp;
+
+    const pushNewMessage: PushNewMessage = {
+        type: 'PUSH_NEW_MESSAGE',
+        id: globalId,
+        chatId,
+        senderId: selfId,
+        text,
+        timestamp: newMessage.timestamp,
+    };
+    const pushPacket: Packet<PushNewMessage> = {
+        msgId: '_' as UUID,
+        payLoad: pushNewMessage,
+    };
+    for (const userId of chat.participants.keys()) {
+        const socketsSet = connectionsStore.getUserSockets(userId);
+        if (!socketsSet) continue;
+
+        for (const socket of socketsSet) {
+            if (socket === ws) continue;
+
+            socket.send(JSON.stringify(pushPacket));
+        }
+    }
+
+    const ackSendMessage: AckSendMessage = {
+        type: 'ACK_SEND_MESSAGE',
+        localId,
+        globalId,
+        chatId,
+        timestamp: newMessage.timestamp,
+    };
+    sentMessageIdsResolver.add(localId, globalId);
+    return ackSendMessage;
 }

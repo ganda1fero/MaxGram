@@ -126,7 +126,6 @@ export const useChatStore = defineStore('chat', () => {
             type: 'SEND_MESSAGE',
             localId,
             chatId: chatId,
-            senderId: selfId,
             text: input,
         };
         socketStore.send(sendMessagePacket);

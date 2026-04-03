@@ -1,17 +1,36 @@
 <script setup lang="ts">
 
+    import { useUiStore } from '@/stores/ui-store';
+    import { useChatStore } from '@/stores/chat-store';
+
     import ChatHeader from '@/components/chat/ChatHeader.vue';
     import ChatInput from '@/components/chat/ChatInput.vue';
+
+    const uiStore = useUiStore();
+    const chatStore = useChatStore();
+
+    const sendLogic = () => {
+        const input = uiStore.chat.chatInput;
+        if (input.length === 0) return;
+
+        chatStore.sendMessage();
+    }
+
+    /// удалить
+    import { useChatContentStore } from '@/stores/chat-content-store';
+    const chatContentStore = useChatContentStore();
 
 </script>
 <template>
     <div class="chat-field">
         <ChatHeader />
         <div class="messages-field">
-            
+            <div v-for="message in chatContentStore.getChatContent(chatStore.getActiveChatId()!).messages">
+                {{ message.text }}
+            </div>
         </div>
         <div class="input-area">
-            <ChatInput />
+            <ChatInput @send-button="sendLogic()"/>
         </div>
     </div>
 </template>

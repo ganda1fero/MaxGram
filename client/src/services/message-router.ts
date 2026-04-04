@@ -91,6 +91,9 @@ function ackInitChatContent(payLoad: AckGetChatContent ): void {
     const chatContentStore = useChatContentStore();
 
     const { type, chatId, ...other } = payLoad;
+    other.messages.forEach(message => {
+        message.technicalId = crypto.randomUUID();
+    });
 
     const chatContent = chatContentStore.getChatContent(payLoad.chatId);
 
@@ -102,6 +105,9 @@ function ackLoadingChatContent(payLoad: AckGetChatContent ): void {
     const chatContentStore = useChatContentStore();
 
     const { chatId, pivotMessageId, messages, hasMoreOlder, hasMoreNewer } = payLoad;
+    messages.forEach(message => {
+        message.technicalId = crypto.randomUUID();
+    });
 
     const chatContent = chatContentStore.getChatContent(chatId);
     if (chatContent.messages[0]?.ID === pivotMessageId) { // prepend
@@ -164,6 +170,8 @@ function ackSendMEssage(payLoad: AckSendMessage): void {
     message.ID = globalId!,
     delete message.status;
     message.timestamp = timestamp!;
+
+    //TODO: sort the messages by timestamp (local message can move up) 
     
     return;
 }
@@ -176,6 +184,7 @@ function pushNewMessage(payLoad: PushNewMessage): void {
 
     const newMessage: Message = {
         ID: id,
+        technicalId: crypto.randomUUID(),
         CHAT_ID: chatId,
         SENDER_ID: senderId,
         text,

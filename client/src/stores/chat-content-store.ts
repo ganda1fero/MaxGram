@@ -1,10 +1,8 @@
 import type { UUID } from "@/types/UUID";
 import type { ChatContent } from "@/types/chatContent";
-import type { Ref } from 'vue'
 import type { GetChatContentPacket } from "@/types/web-socket/client/get-chat-content-packet";
 import type { Message } from "@/types/message";
 
-import { ref } from "vue";
 import { defineStore } from "pinia";
 import { LRUcache } from "@/utils/lru-cache";
 import { useWebSocketStore } from "./useWebSocketStore";

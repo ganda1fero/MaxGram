@@ -13,10 +13,10 @@
 <template>
     <button class="sidebar-button" @click="$emit('click')">
         <Transition name="menu">
-            <Menu class="button-icon" v-if="!uiStore.isSearchMode" />
+            <Menu class="button-icon" v-if="!uiStore.isSearchMode" />   <!--FIXME: fix bug-->
         </Transition>
         <Transition name="back">
-            <ArrowLeft class="button-icon" v-if="uiStore.isSearchMode" />
+            <ArrowLeft class="button-icon" v-if="uiStore.isSearchMode" />   <!--FIXME: fix bug-->
         </Transition>
     </button>
     

@@ -49,7 +49,7 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'ACK_SEND_MESSAGE':
         case 'DENIEN_SEND_MESSAGE':
-            ackSendMEssage(payLoad);
+            ackSendMessage(payLoad);
             break;
         case 'PUSH_NEW_MESSAGE':
             pushNewMessage(payLoad);
@@ -150,7 +150,7 @@ function ackGetAllChats(payLoad: AckGetAllChats): void {
     chatStore.setChatIdsList(chatIds);
 }
 
-function ackSendMEssage(payLoad: AckSendMessage): void {
+function ackSendMessage(payLoad: AckSendMessage): void {
     const { type, localId, globalId, chatId, timestamp } = payLoad;
 
     const chatContentStore = useChatContentStore();
@@ -171,7 +171,8 @@ function ackSendMEssage(payLoad: AckSendMessage): void {
     delete message.status;
     message.timestamp = timestamp!;
 
-    //TODO: sort the messages by timestamp (local message can move up) 
+    //HACK: need to make it easier
+    chatContent.messages.sort((messageA, messageB) => messageA.timestamp - messageB.timestamp);
     
     return;
 }

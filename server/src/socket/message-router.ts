@@ -31,7 +31,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -56,6 +56,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'SEND_MESSAGE':
             wrapResponse<AckSendMessage>(data, ws, sendMessage);
+            break;
+        case 'CONFIRM_GLOBAL_ID':
+            wrapResponse<{}>(data, ws, confirmGlobalID);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -361,4 +364,15 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         timestamp: newMessage.timestamp,
     };
     return ackSendMessage;  // return the ack (to send)
+}
+
+function confirmGlobalID(payLoad: any, ws: WebSocketWithIp): {} {
+    // data unpacking
+    const { localId } = payLoad;
+    ws; // useless hack
+
+    sentMessageIdsResolver.resolve(localId);
+    console.log(`essage, localId: ${localId} resolved!`);
+
+    return {};
 }

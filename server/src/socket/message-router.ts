@@ -279,10 +279,14 @@ function getPrivateChatId(payLoad: any, ws: WebSocketWithIp): AckGetPrivateChatI
 }
 
 function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
-    const { localId, chatId, text } = payLoad;
+    // data unpacking
+    const { localId, chatId, text } = payLoad;  
 
+    const chat = chatsStorage.getChat(chatId);
     const messagesList = messagesStore.getMessagesList(chatId);
+    const selfId = connectionsStore.getUserUUID(ws)!;
 
+    // checking for duplicates
     if (sentMessageIdsResolver.has(localId)) {
         const globalId = sentMessageIdsResolver.get(localId)!;
         const ackSendMessage: AckSendMessage = {
@@ -292,20 +296,20 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
             chatId,
             timestamp: messagesList.find(message => message.ID === globalId)?.timestamp ?? Date.now(),
         };
-        return ackSendMessage;
+        return ackSendMessage;  // send ready data
     }
 
-    const chat = chatsStorage.getChat(chatId);
-    const selfId = connectionsStore.getUserUUID(ws)!;
+    // checking for availability in the participants
     if (!chat?.participants?.has(selfId)) {
         const ackSendMessage: AckSendMessage = {
             type: 'DENIEN_SEND_MESSAGE',
             localId,
             chatId,
         };
-        return ackSendMessage;
+        return ackSendMessage;  // acces denied (message cant'b be sent)
     }
 
+    // create new message
     const globalId = randomUUID();
     const newMessage: Message = {
         ID: globalId,
@@ -315,9 +319,13 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         timestamp: Date.now(),
     };
     messagesStore.addMessage(newMessage);
+    // update chat lastMesage & updatedAt time
     chat.lastMessage = newMessage;
     chat.updatedAt = newMessage.timestamp;
+    // add <local;global> id pair to "redix"
+    sentMessageIdsResolver.add(localId, globalId);
 
+    // create push message
     const pushNewMessage: PushNewMessage = {
         type: 'PUSH_NEW_MESSAGE',
         id: globalId,
@@ -327,20 +335,24 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         timestamp: newMessage.timestamp,
     };
     const pushPacket: Packet<PushNewMessage> = {
-        msgId: '_' as UUID,
+        msgId: '_' as UUID, // no msgID (push message)
         payLoad: pushNewMessage,
     };
+    const stringifiedPushPacket = JSON.stringify(pushPacket);
+
+    // sending push message to every participants sactive sockets (avoiding the sender socket (self))
     for (const userId of chat.participants.keys()) {
         const socketsSet = connectionsStore.getUserSockets(userId);
-        if (!socketsSet) continue;
+        if (!socketsSet) continue;  // no active sockets => skip user
 
         for (const socket of socketsSet) {
-            if (socket === ws) continue;
+            if (socket === ws) continue;    // self socket => skip socket
 
-            socket.send(JSON.stringify(pushPacket));
+            socket.send(stringifiedPushPacket);
         }
     }
 
+    // create ack message
     const ackSendMessage: AckSendMessage = {
         type: 'ACK_SEND_MESSAGE',
         localId,
@@ -348,6 +360,5 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         chatId,
         timestamp: newMessage.timestamp,
     };
-    sentMessageIdsResolver.add(localId, globalId);
-    return ackSendMessage;
+    return ackSendMessage;  // return the ack (to send)
 }

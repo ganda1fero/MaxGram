@@ -13,7 +13,7 @@
         <TransitionGroup name="chat-list">
             <ChatItem
                 v-for="chatId in chatStore.getSortedChatIds"
-                :id="chatId"
+                :key="chatId"
                 :chat="chatStore.getChat(chatId)"
                 @click="chatStore.openChat(chatId)"
             />

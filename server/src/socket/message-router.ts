@@ -20,7 +20,7 @@ import { usersStore } from "../stores/users-store.js";
 import { randomUUID } from 'node:crypto';
 import { chatsStorage } from '../stores/chats-store.js';
 import { messagesStore } from '../stores/messages-store.js';
-import type { PushNewMessage } from '../types/web-socked/server/push-new-message.js';
+import { newMessagePush } from '../services/push-messages/new-message-push.js';
 
 
 export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
@@ -328,32 +328,8 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
     // add <local;global> id pair to "redix"
     sentMessageIdsResolver.add(localId, globalId);
 
-    // create push message
-    const pushNewMessage: PushNewMessage = {
-        type: 'PUSH_NEW_MESSAGE',
-        id: globalId,
-        chatId,
-        senderId: selfId,
-        text,
-        timestamp: newMessage.timestamp,
-    };
-    const pushPacket: Packet<PushNewMessage> = {
-        msgId: '_' as UUID, // no msgID (push message)
-        payLoad: pushNewMessage,
-    };
-    const stringifiedPushPacket = JSON.stringify(pushPacket);
-
-    // sending push message to every participants sactive sockets (avoiding the sender socket (self))
-    for (const userId of chat.participants.keys()) {
-        const socketsSet = connectionsStore.getUserSockets(userId);
-        if (!socketsSet) continue;  // no active sockets => skip user
-
-        for (const socket of socketsSet) {
-            if (socket === ws) continue;    // self socket => skip socket
-
-            socket.send(stringifiedPushPacket);
-        }
-    }
+    // push new message every other participant's sockets
+    newMessagePush(newMessage, ws); 
 
     // create ack message
     const ackSendMessage: AckSendMessage = {

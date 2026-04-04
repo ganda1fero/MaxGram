@@ -1,7 +1,8 @@
 import type { UUID } from "node:crypto";
-import { type User } from "../types/user.js";
+import type { User } from "../types/user.js";
 import { WebSocket } from 'ws'
 import { usersStore } from "./users-store.js";
+import { userOnlineStatusPush } from "../services/push-messages/user-online-status-push.js";
 
 class ConnectionsStote {
     private _ipConnections: Map<string, number> = new Map(); // <string...> = ip
@@ -27,13 +28,13 @@ class ConnectionsStote {
     bindSocketToUser(ws: WebSocket, user: User) {
         this._socketToUser.set(ws, user.ID);
         
-        if (!this._userToSockets.has(user.ID)) {
+        if (!this._userToSockets.has(user.ID)) {    // first connected user's socket 
             this._userToSockets.set(user.ID, new Set());
-            // c++ inside me tels to put `user.status = 'online'` here. IDK
+            user.status = 'online';
+
+            userOnlineStatusPush(user.ID);  // push to every active 'friends'
         }
         this._userToSockets.get(user.ID)!.add(ws);
-
-        user.status = 'online';
     }
 
     unbindSocket(ws: WebSocket): void {
@@ -45,9 +46,12 @@ class ConnectionsStote {
         if (wsSet) {
             wsSet.delete(ws);
 
-            if (wsSet.size === 0) {
+            if (wsSet.size === 0) { // last disconnected user's socket
                 user.lastSeen = Date.now();
                 user.status = 'offline';
+                this._userToSockets.delete(userId); // empty
+
+                userOnlineStatusPush(user.ID);  // push to every active 'friends'
             }
         }
 

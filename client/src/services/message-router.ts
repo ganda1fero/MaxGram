@@ -12,6 +12,7 @@ import type { AckGetAllChats } from "@/types/web-socket/server/ack-get-all-chats
 import type { AckSendMessage } from "@/types/web-socket/server/ack-send-message";
 import type { PushNewMessage } from "@/types/web-socket/server/push-new-message";
 import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-id";
+import type { PushUpdateUser } from "@/types/web-socket/server/push-update-user";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -20,6 +21,7 @@ import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
 import { useWebSocketStore } from "@/stores/useWebSocketStore";
+import { toValue } from "vue";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -55,6 +57,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'PUSH_NEW_MESSAGE':
             pushNewMessage(payLoad);
+            break;
+        case 'PUSH_UPDATE_USER':
+            pushUpdateUser(payLoad);
             break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
@@ -211,4 +216,16 @@ function pushNewMessage(payLoad: PushNewMessage): void {
         chatContent.messages.push(newMessage);
 
     return;
+}
+
+function pushUpdateUser(payLoad: PushUpdateUser): void {
+    // unpacking message
+    const { type, ...rawUserUpdate } = payLoad;
+    const cleanedUserUpdate = Object.fromEntries(
+        Object.entries(rawUserUpdate).filter(([_, value]) => value !== undefined)
+    ) as PushUpdateUser;
+
+    // update user data
+    const usersStore = useUsersStore();
+    usersStore.upsertUser(cleanedUserUpdate);
 }

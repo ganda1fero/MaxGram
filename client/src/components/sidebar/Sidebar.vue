@@ -15,17 +15,17 @@
     const input = ref<string>('');
     
     const menuButtonLogic = () => {
-        if (!uiStore.isSearchMode) { //FIXME: fix bug
+        if (!uiStore.sidebar.isSearchMode) {
             
             // open modal menu
 
         } else {
-            uiStore.isSearchMode = false; //FIXME: fix bug
+            uiStore.sidebar.isSearchMode = false;
             searchStore.setResults([]);
         }
     }
 
-    watch(() => uiStore.isSearchMode, (newSearchState) => { //FIXME: fix bug
+    watch(() => uiStore.sidebar.isSearchMode, (newSearchState) => {
         if (!newSearchState) input.value = '';
     });
 
@@ -39,16 +39,16 @@
                 />
             </div>
             <SearchInput 
-                @focus="uiStore.isSearchMode = true" //FIXME: fix bug
+                @focus="uiStore.sidebar.isSearchMode = true"
                 v-model:input="input"
                 :is-reconnect="!socketStore.isConnected()"
             />
         </div>
         <Transition name="chat-list">
-            <ChatList v-if="!uiStore.isSearchMode" /> //FIXME: fix bug
+            <ChatList v-if="!uiStore.sidebar.isSearchMode" />
         </Transition>
         <Transition name="search-list">
-            <SearchList v-if="uiStore.isSearchMode" :input="input" /> //FIXME: fix bug
+            <SearchList v-if="uiStore.sidebar.isSearchMode" :input="input" />
         </Transition>
     </div>
 </template>

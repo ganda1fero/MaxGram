@@ -130,8 +130,9 @@ export const useChatStore = defineStore('chat', () => {
         };
         socketStore.send(sendMessagePacket);
 
-        const localMessage: Message = {
+        const localMessage: Message = { 
             ID: localId,
+            technicalId: crypto.randomUUID(),
             CHAT_ID: chatId,
             SENDER_ID: selfId,
             text: input,

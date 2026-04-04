@@ -11,6 +11,7 @@ import type { AckGetChat } from "@/types/web-socket/server/ack-get-chat";
 import type { AckGetAllChats } from "@/types/web-socket/server/ack-get-all-chats";
 import type { AckSendMessage } from "@/types/web-socket/server/ack-send-message";
 import type { PushNewMessage } from "@/types/web-socket/server/push-new-message";
+import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-id";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -18,6 +19,7 @@ import { useSearchStore } from "@/stores/useSearchStore";
 import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
+import { useWebSocketStore } from "@/stores/useWebSocketStore";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -173,6 +175,14 @@ function ackSendMessage(payLoad: AckSendMessage): void {
 
     //HACK: need to make it easier
     chatContent.messages.sort((messageA, messageB) => messageA.timestamp - messageB.timestamp);
+
+    // create confirm message
+    const socketStore = useWebSocketStore(); 
+    const confirmGlobalId: ConfirmGlobalId = {
+        type: 'CONFIRM_GLOBAL_ID',
+        localId,
+    };
+    socketStore.send(confirmGlobalId);
     
     return;
 }

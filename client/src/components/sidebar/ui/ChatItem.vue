@@ -33,7 +33,7 @@
                 status: 'offline',
                 gradientPair: { topHsl: '', bottomHsl: '' },
             }
-            console.warn(`can't find the other participant in ${props.chat.ID} chat`);
+            console.warn(`can't find the other participant in ${props.chat.ID} chat. Maybe loading`);
             return fakeUser;
         }
 

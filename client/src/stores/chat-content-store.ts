@@ -28,7 +28,7 @@ export const useChatContentStore = defineStore('chatContent', () => {
 
             addChatContent(newChatContent);
             fetchStartContent(chatId);
-            return newChatContent;
+            return chatContents.get(chatId)!;
         }
         
         return existing;

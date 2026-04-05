@@ -136,6 +136,7 @@ export const useChatStore = defineStore('chat', () => {
             CHAT_ID: chatId,
             SENDER_ID: selfId,
             text: input,
+            status: 'sending',
             timestamp: Date.now(),
         };
 

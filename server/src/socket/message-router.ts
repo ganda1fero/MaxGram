@@ -154,10 +154,10 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
     let startIndex: number;
     let lastIndex: number;
 
-    if (!anchorMessageId) {
-        if (!parcipiant.lastReadedMessageId) {
-            startIndex = 0;
-            lastIndex = Math.min(20, messagesLength);
+    if (anchorMessageId === undefined) {
+        if (parcipiant.lastReadedMessageId === undefined) {
+            startIndex = Math.max(0, messagesLength - 20 - 1);
+            lastIndex = messagesLength;
         } else {
             const pivotIndex = allMessages.findIndex(m => m.ID === parcipiant.lastReadedMessageId);
             const safePivot = pivotIndex === -1 ? messagesLength : pivotIndex;
@@ -169,7 +169,7 @@ function getChatContent(payLoad: any, ws: WebSocketWithIp): AckGetChatContent {
             type: 'INIT_CHAT_CONTENT',
             chatId,
             messages: allMessages.slice(startIndex, lastIndex),
-            pivotMessageId: allMessages[startIndex]?.ID,
+            pivotMessageId: allMessages[lastIndex]?.ID,
             hasMoreOlder: startIndex > 0,
             hasMoreNewer: lastIndex < messagesLength,
         };

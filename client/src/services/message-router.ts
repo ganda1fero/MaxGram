@@ -97,7 +97,7 @@ function ackSearchUsers(payLoad: AckSearchUsers): void {
 function ackInitChatContent(payLoad: AckGetChatContent ): void {
     const chatContentStore = useChatContentStore();
 
-    const { type, chatId, ...other } = payLoad;
+    const { type, chatId, pivotMessageId, ...other } = payLoad;
     other.messages.forEach(message => {
         message.technicalId = crypto.randomUUID();
     });

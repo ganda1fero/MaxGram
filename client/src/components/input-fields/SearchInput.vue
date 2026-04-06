@@ -81,7 +81,7 @@
         max-width: 340px;
         height: 100%;
         max-height: 44px;
-        margin: 0;
+        margin: 0 10px 0 0;
 
         background-color: rgb(28, 28, 28);
 

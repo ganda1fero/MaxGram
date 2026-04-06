@@ -63,7 +63,6 @@
         overflow: hidden;
 
         background-color: rgb(40, 40, 40);
-        border: solid white 1px;
 
         & .menu-button-wrapper{
             display: flex;

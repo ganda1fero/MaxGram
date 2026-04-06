@@ -45,7 +45,7 @@ export const useChatContentStore = defineStore('chatContent', () => {
         return true;
     }
 
-    const fetchStartContent = (chatId: UUID): void => {
+    const fetchStartContent = async (chatId: UUID): Promise<void> => {
         const chatContent = getChatContent(chatId);
         chatContent.isLoading = true;
 
@@ -55,6 +55,16 @@ export const useChatContentStore = defineStore('chatContent', () => {
         };
 
         socketStore.send(chatContentPacket);
+
+        // create promise
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
+
+        return new Promise((resolve) => {
+            resolveFetchMessagesPromise = resolve;
+        });
     }
 
     const fetchOlderMessages = async (chatId: UUID): Promise<void> => {
@@ -121,6 +131,19 @@ export const useChatContentStore = defineStore('chatContent', () => {
         });
     }
 
+    const initMessages = (chatId: UUID, messages: Message[], hasMoreNewer: boolean, hasMoreOlder: boolean): void => {
+        const chatContent = getChatContent(chatId);
+
+        const data = { messages, hasMoreNewer, hasMoreOlder };
+        Object.assign(chatContent, data);
+        chatContent.isLoading = false;
+
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
+    }
+
     const appendMessages = (chatId: UUID, messages: Message[], hasMoreOlder: boolean | undefined, hasMoreNewer: boolean | undefined): void => {
         const chatContent = getChatContent(chatId);
         const chatMessages = chatContent.messages;
@@ -174,5 +197,5 @@ export const useChatContentStore = defineStore('chatContent', () => {
         }
     }
 
-    return { getChatContent, appendMessages, prependMessages, fetchNewerMessages, fetchOlderMessages, fetchStartContent, removefirstsExtraMessages, removelastsExtraMessages };
+    return { getChatContent, appendMessages, prependMessages, fetchNewerMessages, fetchOlderMessages, fetchStartContent, initMessages, removefirstsExtraMessages, removelastsExtraMessages };
 });

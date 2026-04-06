@@ -111,6 +111,12 @@ export const useChatStore = defineStore('chat', () => {
     const setChatIdsList = (newChatIdsList: UUID[]): void => {
         chatIdsSet.value = new Set(newChatIdsList);
     }
+    const chatIdsListAdd = (chatId: UUID): void => {
+        chatIdsSet.value.add(chatId);
+    }
+    const chatIdsListDelete = (chatId: UUID): boolean => {
+        return chatIdsSet.value.delete(chatId);
+    }
 
     const sendMessage = (): boolean => {
         const chatId = activeChat.value;
@@ -173,5 +179,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, sendMessage };
+    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage };
 });

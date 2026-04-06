@@ -211,6 +211,8 @@ function pushNewMessage(payLoad: PushNewMessage): void {
     chat.lastMessage = newMessage;
     chat.updatedAt = newMessage.timestamp;
 
+    chatStore.chatIdsListAdd(chatId);
+
     const chatContent = chatContentStore.getChatContent(chatId);
     if (!chatContent.hasMoreNewer) 
         chatContent.messages.push(newMessage);

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 
     import type { Message } from '@/types/message';
+    import type { ChatContent } from '@/types/chatContent';
+    import type { UUID } from '@/types/UUID';
 
-    import { computed } from 'vue';
+    import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
     import { useUiStore } from '@/stores/ui-store';
     import { useChatStore } from '@/stores/chat-store';
     import { useChatContentStore } from '@/stores/chat-content-store';
@@ -11,11 +13,15 @@
     import ChatInput from '@/components/chat/ChatInput.vue';
     import ChatMessage from '@/components/chat/message/ChatMessage.vue';
 
+
     const uiStore = useUiStore();
     const chatStore = useChatStore();
     const chatContentStore = useChatContentStore();
 
-    const messages = computed((): Message[] => chatContentStore.getChatContent(chatStore.getActiveChatId()!).messages);
+    const chatContent = computed((): ChatContent => chatContentStore.getChatContent(chatStore.getActiveChatId()!));
+    const chatId = computed((): UUID => chatContent.value.chatId);
+    const messagesLength = computed((): number => chatContent.value.messages.length);
+    const messages = computed((): Message[] => chatContent.value.messages);
 
     const sendLogic = () => {
         const input = uiStore.chat.chatInput;
@@ -46,11 +52,115 @@
         return { 'large-semantic-indent': true };
     }
 
+    // observer
+    let observer: IntersectionObserver | null = null;
+    const prependTrigger = ref<HTMLElement | null>(null);
+    const appendTrigger = ref<HTMLElement | null>(null);
+    const messagesField = ref<HTMLElement | null>(null);
+
+    const scrollToBottom = async (): Promise<void> => {
+        if (messagesField.value === null) {
+            console.warn("messages field not found");
+            return;
+        }
+
+        await nextTick();   // waiting for the end of any loadings
+
+        if (chatContent.value.hasMoreNewer === false) { // the end is loaded
+            messagesField.value.scrollTo({
+                top: messagesField.value.scrollHeight,
+                behavior: 'auto',
+            });
+            return;
+        }
+
+        // load init
+        chatContentStore.fetchStartContent(chatContent.value.chatId);
+    }
+
+    watch(messagesLength, () => {
+        scrollToBottom();
+    }, { once: true });
+    watch(chatId, () => {
+        scrollToBottom();
+    });
+
+    onMounted(() => {
+        // observer options
+        const ObserverOptions = {
+            rootMargin: '200px 0px',
+            threshold: 0,
+        };
+        const observerCallback = async (entries: IntersectionObserverEntry[]) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    if (messagesField.value === null) {
+                        console.warn("'messages field' not found");
+                        return;
+                    }
+
+                    // execute an event
+                    if (entry.target === prependTrigger.value && !chatContent.value.isLoading && chatContent.value.hasMoreOlder) {    // trying to load older
+                        // memorize scroll position
+                        const scrollOffsetFromBottom = messagesField.value.scrollHeight 
+                            - messagesField.value.scrollTop;
+
+                        console.warn('try to load older');
+                        await chatContentStore.fetchOlderMessages(chatContent.value.chatId);
+
+                        // recover scroll position
+                        await nextTick();
+                        messagesField.value.scrollTop = messagesField.value.scrollHeight - scrollOffsetFromBottom;
+
+                        if (chatContent.value.messages.length > 60) {
+                            const scrollOffsetFromTop = messagesField.value.scrollTop;
+                            chatContentStore.removelastsExtraMessages(chatContent.value.chatId);
+                            messagesField.value.scrollTop = scrollOffsetFromTop;
+                        }
+                    }
+                    else if (entry.target === appendTrigger.value && !chatContent.value.isLoading && chatContent.value.hasMoreNewer) {    // trying to load newer
+                        // memorize scroll position 
+                        const scrollOffsetFromTop = messagesField.value.scrollTop;
+
+                        console.warn('try to load newer');
+                        await chatContentStore.fetchNewerMessages(chatContent.value.chatId);
+
+                        // recover scroll position
+                        await nextTick();
+                        messagesField.value.scrollTop = scrollOffsetFromTop;
+
+                        if (chatContent.value.messages.length > 60) {
+                            const scrollOffsetFromBottom = messagesField.value.scrollHeight 
+                                - messagesField.value.scrollTop;
+                            chatContentStore.removefirstsExtraMessages(chatContent.value.chatId);
+                            messagesField.value.scrollTop = messagesField.value.scrollHeight - scrollOffsetFromBottom;
+                        }
+                    }
+                    else return;
+                }
+            }
+        };
+
+        // init observer
+        observer = new IntersectionObserver(observerCallback, ObserverOptions);
+
+        if (prependTrigger.value === null) console.warn("prepend trigger not found");
+        else observer.observe(prependTrigger.value);
+
+        if (appendTrigger.value === null) console.warn("append trigger not found");
+        else observer.observe(appendTrigger.value);
+    });
+
+    onUnmounted(() => {
+        if (observer) observer.disconnect();    
+    });
+
 </script>
 <template>
     <div class="chat-field">
         <ChatHeader />
-        <div class="messages-field">
+        <div class="messages-field" ref="messagesField">
+            <div ref="prependTrigger" class="load-trigger"/>
             <div
                 v-for="(message, index) in messages"
                 :key="message.technicalId"
@@ -62,6 +172,7 @@
                     />
                 </div>
             </div>
+            <div ref="appendTrigger" class="load-trigger"/>
         </div>
         <div class="input-area">
             <ChatInput @send-button="sendLogic()"/>
@@ -89,6 +200,7 @@
 
         overflow-x: hidden;
         overflow-y: auto;
+        overflow-anchor: auto;
 
         width: 100%;
         max-width: 750px;
@@ -106,6 +218,8 @@
             width: 100%;
             height: auto;
 
+            overflow-anchor: auto;
+
             transition: margin-bottom 0.3s ease;
 
             &.small-semantic-indent{
@@ -118,15 +232,28 @@
                 margin-bottom: 16px;
             }
         }
+
+        & .load-trigger{
+            box-sizing: border-box;
+            width: 100%;
+            height: 1px;
+            overflow-anchor: none;
+        }
     }
 
     .input-area{
         display: inline-flex;
         flex-shrink: 0;
 
+        overflow-anchor: none;
+
         width: 100%;
         max-width: 705px;
 
         border:solid yellow 1px;
+    }
+
+    header {
+        overflow-anchor: none;
     }
 </style>

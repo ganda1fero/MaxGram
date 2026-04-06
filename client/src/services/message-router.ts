@@ -119,7 +119,7 @@ function ackLoadingChatContent(payLoad: AckGetChatContent ): void {
     const chatContent = chatContentStore.getChatContent(chatId);
     if (chatContent.messages[0]?.ID === pivotMessageId) { // prepend
         chatContentStore.prependMessages(chatId, messages, hasMoreOlder, hasMoreNewer);
-    } else if (chatContent.messages[-1]?.ID === pivotMessageId) {    // append
+    } else if (chatContent.messages[chatContent.messages.length - 1]?.ID === pivotMessageId) {    // append
         chatContentStore.appendMessages(chatId, messages, hasMoreOlder, hasMoreNewer);
     } else {
         console.warn('pivot message is not first or last elem in messages list');

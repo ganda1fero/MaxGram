@@ -12,6 +12,9 @@ export const useChatContentStore = defineStore('chatContent', () => {
     // --- state
     const chatContents = new LRUcache<UUID, ChatContent>(10); // max size = 10
 
+    let resolveFetchMessagesPromise: ((value: void | PromiseLike<void>) => void) | null = null;
+    const MAX_MESSAGES_COUNT = 60;
+
     const socketStore = useWebSocketStore();
 
     // --- getters
@@ -24,7 +27,7 @@ export const useChatContentStore = defineStore('chatContent', () => {
                 isLoading: true,
                 hasMoreOlder: false,
                 hasMoreNewer: false,
-            }
+            };
 
             addChatContent(newChatContent);
             fetchStartContent(chatId);
@@ -43,12 +46,79 @@ export const useChatContentStore = defineStore('chatContent', () => {
     }
 
     const fetchStartContent = (chatId: UUID): void => {
+        const chatContent = getChatContent(chatId);
+        chatContent.isLoading = true;
+
         const chatContentPacket: GetChatContentPacket = {
             type: 'GET_CHAT_CONTENT',
             chatId,
         };
 
         socketStore.send(chatContentPacket);
+    }
+
+    const fetchOlderMessages = async (chatId: UUID): Promise<void> => {
+        const chatContent = getChatContent(chatId);
+        if (chatContent.isLoading) return;
+        if (!chatContent.hasMoreOlder) return;
+
+        const anchorMessage: Message | undefined = chatContent.messages[0];
+        if (anchorMessage === undefined) {
+            console.warn("trying to fetch older without anchor message");
+            return;
+        }
+
+        const chatContentPacket: GetChatContentPacket = {
+            type: 'GET_CHAT_CONTENT',
+            chatId,
+            anchorMessageId: anchorMessage.ID,
+            loadOlder: true,
+        };
+
+        socketStore.send(chatContentPacket);
+        chatContent.isLoading = true;
+        
+        // create promise
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
+        
+        return new Promise((resolve) => {
+            resolveFetchMessagesPromise = resolve;
+        });
+    }
+
+    const fetchNewerMessages = async (chatId: UUID): Promise<void> => {
+        const chatContent = getChatContent(chatId);
+        if (chatContent.isLoading) return;
+        if (!chatContent.hasMoreNewer) return;
+
+        const anchorMessage: Message | undefined = chatContent.messages[chatContent.messages.length - 1];
+        if (anchorMessage === undefined) {
+            console.warn("trying to fetch older without anchor message");
+            return;
+        }
+
+        const chatContentPacket: GetChatContentPacket = {
+            type: 'GET_CHAT_CONTENT',
+            chatId,
+            anchorMessageId: anchorMessage.ID,
+            loadNewer: true,
+        };
+
+        socketStore.send(chatContentPacket);
+        chatContent.isLoading = true;
+
+        // create promise
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
+
+        return new Promise((resolve) => {
+            resolveFetchMessagesPromise = resolve;
+        });
     }
 
     const appendMessages = (chatId: UUID, messages: Message[], hasMoreOlder: boolean | undefined, hasMoreNewer: boolean | undefined): void => {
@@ -59,6 +129,12 @@ export const useChatContentStore = defineStore('chatContent', () => {
         if (chatMessages.length === 0) chatContent.hasMoreOlder = hasMoreOlder || false;
 
         chatMessages.push(...messages);
+        
+        chatContent.isLoading = false;
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
     }
 
     const prependMessages = (chatId: UUID, messages: Message[], hasMoreOlder: boolean | undefined, hasMoreNewer: boolean | undefined): void => {
@@ -69,11 +145,34 @@ export const useChatContentStore = defineStore('chatContent', () => {
         if (chatMessages.length === 0) chatContent.hasMoreNewer = hasMoreNewer || false;
 
         chatMessages.unshift(...messages);
+
+        chatContent.isLoading = false;
+        if (resolveFetchMessagesPromise !== null) {
+            resolveFetchMessagesPromise();
+            resolveFetchMessagesPromise = null;
+        }
     }
 
-    // fetchOlder method
+    const removefirstsExtraMessages = (chatId: UUID) => {
+        const chatContent = getChatContent(chatId);
+        const chatMessages = chatContent.messages; 
 
-    // fetchNewer method
+        const extraMessagesCount = chatMessages.length - MAX_MESSAGES_COUNT;
+        if (extraMessagesCount > 0) { 
+            chatMessages.splice(0, extraMessagesCount);
+            chatContent.hasMoreOlder = true; 
+        }
+    }
+    const removelastsExtraMessages = (chatId: UUID) => {
+        const chatContent = getChatContent(chatId);
+        const chatMessages = chatContent.messages; 
 
-    return { getChatContent, appendMessages, prependMessages };
+        const extraMessagesCount = chatMessages.length - MAX_MESSAGES_COUNT;
+        if (extraMessagesCount > 0) {
+            chatMessages.splice(chatMessages.length - extraMessagesCount + 1, extraMessagesCount);
+            chatContent.hasMoreNewer = true;
+        }
+    }
+
+    return { getChatContent, appendMessages, prependMessages, fetchNewerMessages, fetchOlderMessages, fetchStartContent, removefirstsExtraMessages, removelastsExtraMessages };
 });

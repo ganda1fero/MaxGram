@@ -211,6 +211,17 @@
 
         border: solid blueviolet 1px;
 
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        &::-webkit-scrollbar{
+            width: 6px;
+        }
+        &::-webkit-scrollbar-thumb{
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+
         & .message-content{
             display: flex;
             box-sizing: border-box;

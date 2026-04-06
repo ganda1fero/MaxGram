@@ -5,7 +5,7 @@
     import { useAuthStore } from '@/stores/useAuthStore';
     import { computed } from 'vue';
 
-    import { Check } from 'lucide-vue-next';
+    import { Clock } from 'lucide-vue-next';
     import { CheckCheck } from 'lucide-vue-next';
     import { CircleAlert } from 'lucide-vue-next';
 
@@ -51,9 +51,9 @@
         <div class="text">{{ message.text }}</div>
         <div class="message-meta">
             <div class="time">{{ messageTime }}</div>
-            <TransitionGroup name="message-icons">
+            <TransitionGroup v-if="authStore.getUUID() === message.SENDER_ID" name="message-icons">
                 <div v-if="message.status === 'sending'" class="check-icon">
-                    <Check :size="14"/>
+                    <Clock :size="14"/>
                 </div>
                 <div v-else-if="message.status === 'deniend'" class="denied-icon">
                     <CircleAlert :size="14"/>

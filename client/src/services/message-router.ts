@@ -97,15 +97,12 @@ function ackSearchUsers(payLoad: AckSearchUsers): void {
 function ackInitChatContent(payLoad: AckGetChatContent ): void {
     const chatContentStore = useChatContentStore();
 
-    const { type, chatId, pivotMessageId, ...other } = payLoad;
-    other.messages.forEach(message => {
+    const { type, chatId, pivotMessageId, messages, hasMoreNewer, hasMoreOlder } = payLoad;
+    messages.forEach(message => {
         message.technicalId = crypto.randomUUID();
     });
 
-    const chatContent = chatContentStore.getChatContent(payLoad.chatId);
-
-    Object.assign(chatContent, other);
-    chatContent.isLoading = false;
+    chatContentStore.initMessages(chatId, messages, hasMoreNewer || false, hasMoreOlder || false);
 }
 
 function ackLoadingChatContent(payLoad: AckGetChatContent ): void {

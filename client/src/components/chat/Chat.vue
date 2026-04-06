@@ -28,6 +28,8 @@
         if (input.length === 0) return;
 
         chatStore.sendMessage();
+
+        scrollToBottom();
     }
 
     type SemanticIndent = {
@@ -66,16 +68,18 @@
 
         await nextTick();   // waiting for the end of any loadings
 
-        if (chatContent.value.hasMoreNewer === false) { // the end is loaded
-            messagesField.value.scrollTo({
-                top: messagesField.value.scrollHeight,
-                behavior: 'auto',
-            });
-            return;
+        if (chatContent.value.hasMoreNewer) {
+            // load init
+            await chatContentStore.fetchStartContent(chatContent.value.chatId);
+            await nextTick(); // wait while vue rendering new messages
         }
 
-        // load init
-        chatContentStore.fetchStartContent(chatContent.value.chatId);
+        // the end of messages is loaded
+        messagesField.value.scrollTo({
+            top: messagesField.value.scrollHeight,
+            behavior: 'auto',
+        });
+        return;
     }
 
     watch(messagesLength, () => {

@@ -192,8 +192,6 @@
         width: 100%;
         height: 100%;
         padding: 0;
-
-        border: solid red 1px;
     }
 
     .messages-field{
@@ -212,8 +210,6 @@
         min-height: 0;
 
         padding: 0 5px;
-
-        border: solid blueviolet 1px;
 
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -261,11 +257,10 @@
         flex-shrink: 0;
 
         overflow-anchor: none;
+        margin-top: 5px;
 
         width: 100%;
         max-width: 705px;
-
-        border:solid yellow 1px;
     }
 
     header {

@@ -245,10 +245,12 @@ function getAllChats(payLoad: any, ws: WebSocketWithIp): AckGetAllChats {
     const selfUserId = connectionsStore.getUserUUID(ws)!;
 
     const chatsSet = chatsStorage.getUserChatsSet(selfUserId);
+    const chatsList = !!chatsSet ? Array.from(chatsSet, chat => chat.ID)
+        .filter(chatId => messagesStore.getMessagesList(chatId).length > 0) : [];
 
     const ackGetAllChatsObj: AckGetAllChats = {
         type: 'GET_ALL_CHATS',
-        chats: !!chatsSet ? Array.from(chatsSet, chat => chat.ID) : [],
+        chats: chatsList,
     }
     return ackGetAllChatsObj;
 }

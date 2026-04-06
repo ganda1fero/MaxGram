@@ -68,7 +68,7 @@
             display: flex;
             align-items: center;
 
-            margin: 0 10px 0 0;
+            margin: 0 10px 0 10px;
 
             width: 40px;
             height: 100%;

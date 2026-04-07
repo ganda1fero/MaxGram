@@ -26,12 +26,12 @@
     <div class="user-container">
         <UserAvatar class="avatar" :user="props.user" :width="42" />
         <div class="info-wrapper" :style="!user.isLoading ? `margin-bottom:4px;`:``">
-            <div v-if="!user.isLoading" class="username">
+            <div v-if="!user.isLoading" class="username dont-copy">
                 {{ user.username }}
             </div>
             <div v-else class="username info-skeleton" :style="`width:${skeletonUsernameWidth}px;`" />
 
-            <div v-if="!user.isLoading" class="last-active">
+            <div v-if="!user.isLoading" class="last-active dont-copy">
                 {{ status }}
             </div>
             <div v-else class="last-active info-skeleton" />
@@ -39,6 +39,11 @@
     </div>
 </template>
 <style scoped>
+    .dont-copy{
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
     .user-container{
         display: flex;
         align-items: center;

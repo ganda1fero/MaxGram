@@ -82,17 +82,22 @@
         <UserAvatar :width="54" :user="user" style="margin: 0 8px 0 0;"/>
         <div class="chat-info-wrapper">
             <div class="info-row"> <!-- name | las message time -->
-                <span class="username">{{ user.username }}</span>
-                <span class="last-message-time" :style="isSelected ? `color: rgba(255, 255, 255, 1);` : ``"> {{ formattedLastMessageTime ?? '--:--' }}</span>
+                <span class="username dont-copy">{{ user.username }}</span>
+                <span class="last-message-time dont-copy" :style="isSelected ? `color: rgba(255, 255, 255, 1);` : ``"> {{ formattedLastMessageTime ?? '--:--' }}</span>
             </div>
             <div class="info-row"> <!-- last message preview | unreaded count -->
-                <span class="last-message" :style="isSelected ? `color: rgba(255, 255, 255, 1);` : ``">{{ lastMessagePreview ?? '---' }}</span>
+                <span class="last-message dont-copy" :style="isSelected ? `color: rgba(255, 255, 255, 1);` : ``">{{ lastMessagePreview ?? '---' }}</span>
                 <!--TODO: add an unread message counter-->
             </div>
         </div>
     </div>
 </template>
 <style scoped>
+    .dont-copy{
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
     .chat-item-container{
         display: flex;
         box-sizing: border-box;
@@ -115,6 +120,10 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+
+        white-space: nowrap;    
+        overflow: hidden;       
+        text-overflow: ellipsis;
 
         margin-top: 3px;
 

@@ -196,7 +196,8 @@
                 >
                     <ChatMessage
                         :message
-                        :is-final-for-sender="message.SENDER_ID !== messages[index + 1]?.SENDER_ID"
+                        :is-final-for-sender="message.SENDER_ID !== messages[index + 1]?.SENDER_ID
+                            || (messages[index + 1]?.timestamp ?? 0) - message.timestamp >= 1 * 60 * 1000"
                     />
                 </div>
             </div>

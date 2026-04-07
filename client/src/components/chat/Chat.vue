@@ -59,18 +59,12 @@
     }
 
     const menuRef = ref<InstanceType<typeof MessageMenu> | null>();
-    const currentMenuMessage = ref<Message | null>(null);
-    const markMenuMessage = ref<Message | null>(null);
     const openContextMenu = (e: MouseEvent, message: Message) => {
-        currentMenuMessage.value = message;
-        markMenuMessage.value = message;
+        uiStore.chat.lastSelectedMessage.value = message;
+        uiStore.chat.highlightedMessageId = message.ID;
         
         if (menuRef.value === null) console.warn("message menu is not found");
         else menuRef.value?.openMenu(e, message.SENDER_ID === selfId.value);
-    }
-    const copyMessageText = () => {
-        if (currentMenuMessage.value === null) return;
-        navigator.clipboard.writeText(currentMenuMessage.value.text);
     }
 
     // observer
@@ -184,23 +178,25 @@
         <ChatHeader />
         <div class="messages-field" ref="messagesField">
             <div ref="prependTrigger" class="load-trigger"/>
-            <div
-                v-for="(message, index) in messages"
-                :key="message.technicalId"
-            >
-                <div 
-                    class="message-content" 
-                    :class="semanticIndent(message, messages[index + 1])"
-                    :style="message.ID === markMenuMessage?.ID ? `background-color:rgba(0, 0, 0, 0.2);` : ``"
-                    @contextmenu.prevent="openContextMenu($event, message)"
+            <TransitionGroup name="messages" tag="div">
+                <div
+                    v-for="(message, index) in messages"
+                    :key="message.technicalId"
                 >
-                    <ChatMessage
-                        :message
-                        :is-final-for-sender="message.SENDER_ID !== messages[index + 1]?.SENDER_ID
-                            || (messages[index + 1]?.timestamp ?? 0) - message.timestamp >= 1 * 60 * 1000"
-                    />
+                    <div 
+                        class="message-content" 
+                        :class="semanticIndent(message, messages[index + 1])"
+                        :style="message.ID === uiStore.chat.highlightedMessageId ? `background-color:rgba(0, 0, 0, 0.2);` : ``"
+                        @contextmenu.prevent="openContextMenu($event, message)"
+                    >
+                        <ChatMessage
+                            :message
+                            :is-final-for-sender="message.SENDER_ID !== messages[index + 1]?.SENDER_ID
+                                || (messages[index + 1]?.timestamp ?? 0) - message.timestamp >= 1 * 60 * 1000"
+                        />
+                    </div>
                 </div>
-            </div>
+            </TransitionGroup>
             <div ref="appendTrigger" class="load-trigger"/>
         </div>
         <div class="input-area">
@@ -211,9 +207,9 @@
             ref="menuRef"
             @reply=""
             @edit=""
-            @copy="copyMessageText()"
-            @delete=""
-            @close-menu="markMenuMessage = null"
+            @copy="uiStore.chat.lastSelectedMessage.copyToClipboard()"
+            @delete="uiStore.chat.lastSelectedMessage.delete()"
+            @close-menu="uiStore.chat.highlightedMessageId = null"
         />
     </div>
 </template>

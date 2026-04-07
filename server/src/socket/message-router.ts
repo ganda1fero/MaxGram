@@ -379,7 +379,7 @@ function deleteMessage(payLoad: any, ws: WebSocketWithIp): {} {
         console.warn("message not found");
         return {};
     }
-    else if (messageId === messagesList.length - 1) { // delete last message => change chat { updatedAt, lastMessage }
+    else if (messageIndex === messagesList.length - 1) { // delete last message => change chat { updatedAt, lastMessage }
         const prevMessage = messagesList[messageIndex - 1];
         if (prevMessage === undefined) {    // no more activity
             chat.updatedAt = chat.createdAt;

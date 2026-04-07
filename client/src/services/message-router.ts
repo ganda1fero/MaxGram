@@ -64,6 +64,8 @@ export function handleIncomingPacket(data: Packet) {
         case 'PUSH_DELETE_MESSAGE':
             pushDeleteMessage(payLoad);
             break;
+        case undefined: // do nothing
+            break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
             break;

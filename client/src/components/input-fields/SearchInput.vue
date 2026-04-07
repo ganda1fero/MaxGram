@@ -41,8 +41,12 @@
 <template>
     <label :for="inputId" style="display: contents;">
         <div class="input-wrapper" :class="{ 'input-focus': isFocus }">
-            <Search v-if="!isReconnect" class="icon" :class="{ 'icon-focus': isFocus }"/>
-            <RotateCw v-else class="icon spin" :class="{ 'icon-focus': isFocus }"/>
+            <div class="icon-wrapper" v-if="!isReconnect">
+                <Search class="icon" :class="{ 'icon-focus': isFocus }" :size="24"/>
+            </div>
+            <div class="icon-wrapper" v-else>
+                <RotateCw class="icon spin" :class="{ 'icon-focus': isFocus }" :size="24"/>
+            </div>
             <input
                 v-model="input"
                 @focus="($event.target as HTMLInputElement).readOnly = false; isFocus = true"
@@ -129,15 +133,20 @@
         outline: none;
         background-color: transparent;
     }
-    .icon{
-        width: 24px;
-        height: 24px;
+    .icon-wrapper{
+        display: flex;
+        box-sizing: border-box;
 
+        width: 24px;
+        height: auto;
         margin: 0 15px;
 
-        color: rgb(160, 160, 160);
-
         transition: 0.3s ease-out;
+    }
+    .icon{
+        box-sizing: border-box;
+
+        color: rgb(160, 160, 160);
 
         &.icon-focus{
             color: rgba(39, 150, 203, 1);

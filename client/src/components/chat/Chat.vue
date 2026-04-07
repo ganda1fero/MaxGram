@@ -8,20 +8,24 @@
     import { useUiStore } from '@/stores/ui-store';
     import { useChatStore } from '@/stores/chat-store';
     import { useChatContentStore } from '@/stores/chat-content-store';
+    import { useAuthStore } from '@/stores/useAuthStore';
 
     import ChatHeader from '@/components/chat/ChatHeader.vue';
     import ChatInput from '@/components/chat/ChatInput.vue';
     import ChatMessage from '@/components/chat/message/ChatMessage.vue';
+    import MessageMenu from './message/MessageMenu.vue';
 
 
     const uiStore = useUiStore();
     const chatStore = useChatStore();
     const chatContentStore = useChatContentStore();
+    const authstore = useAuthStore();
 
     const chatContent = computed((): ChatContent => chatContentStore.getChatContent(chatStore.getActiveChatId()!));
     const chatId = computed((): UUID => chatContent.value.chatId);
     const messagesLength = computed((): number => chatContent.value.messages.length);
     const messages = computed((): Message[] => chatContent.value.messages);
+    const selfId = computed((): UUID | null => authstore.getUUID());
 
     const sendLogic = () => {
         const input = uiStore.chat.chatInput;
@@ -52,6 +56,21 @@
         
         // means that time interval > 15 mins
         return { 'large-semantic-indent': true };
+    }
+
+    const menuRef = ref<InstanceType<typeof MessageMenu> | null>();
+    const currentMenuMessage = ref<Message | null>(null);
+    const markMenuMessage = ref<Message | null>(null);
+    const openContextMenu = (e: MouseEvent, message: Message) => {
+        currentMenuMessage.value = message;
+        markMenuMessage.value = message;
+        
+        if (menuRef.value === null) console.warn("message menu is not found");
+        else menuRef.value?.openMenu(e, message.SENDER_ID === selfId.value);
+    }
+    const copyMessageText = () => {
+        if (currentMenuMessage.value === null) return;
+        navigator.clipboard.writeText(currentMenuMessage.value.text);
     }
 
     // observer
@@ -156,7 +175,7 @@
     });
 
     onUnmounted(() => {
-        if (observer) observer.disconnect();    
+        if (observer) observer.disconnect();  
     });
 
 </script>
@@ -169,7 +188,12 @@
                 v-for="(message, index) in messages"
                 :key="message.technicalId"
             >
-                <div class="message-content" :class="semanticIndent(message, messages[index + 1])">
+                <div 
+                    class="message-content" 
+                    :class="semanticIndent(message, messages[index + 1])"
+                    :style="message.ID === markMenuMessage?.ID ? `background-color:rgba(0, 0, 0, 0.2);` : ``"
+                    @contextmenu.prevent="openContextMenu($event, message)"
+                >
                     <ChatMessage
                         :message
                         :is-final-for-sender="message.SENDER_ID !== messages[index + 1]?.SENDER_ID"
@@ -181,6 +205,15 @@
         <div class="input-area">
             <ChatInput @send-button="sendLogic()"/>
         </div>
+
+        <MessageMenu 
+            ref="menuRef"
+            @reply=""
+            @edit=""
+            @copy="copyMessageText()"
+            @delete=""
+            @close-menu="markMenuMessage = null"
+        />
     </div>
 </template>
 <style scoped>
@@ -228,6 +261,7 @@
 
             width: 100%;
             height: auto;
+            border-radius: 10px;
 
             overflow-anchor: auto;
 

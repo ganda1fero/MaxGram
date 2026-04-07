@@ -13,6 +13,7 @@ import type { AckSendMessage } from "@/types/web-socket/server/ack-send-message"
 import type { PushNewMessage } from "@/types/web-socket/server/push-new-message";
 import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-id";
 import type { PushUpdateUser } from "@/types/web-socket/server/push-update-user";
+import type { PushDeleteMessage } from "@/types/web-socket/server/push-delete-message";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -21,7 +22,6 @@ import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
 import { useWebSocketStore } from "@/stores/useWebSocketStore";
-import { toValue } from "vue";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -60,6 +60,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'PUSH_UPDATE_USER':
             pushUpdateUser(payLoad);
+            break;
+        case 'PUSH_DELETE_MESSAGE':
+            pushDeleteMessage(payLoad);
             break;
         default:    // unknown type!
             console.warn("Unknown packet type!", payLoad.type);
@@ -229,4 +232,36 @@ function pushUpdateUser(payLoad: PushUpdateUser): void {
     // update user data
     const usersStore = useUsersStore();
     usersStore.upsertUser(cleanedUserUpdate);
+}
+
+function pushDeleteMessage(payLoad: PushDeleteMessage): void {
+    // unpacking message
+    const { chatId, messageId } = payLoad;
+
+    // init stores
+    const chatsStore = useChatStore();
+    const chatContentStore = useChatContentStore();
+
+    // load chat and chatContent
+    const chat = chatsStore.getChat(chatId);
+    const chatContent = chatContentStore.getChatContent(chatId);
+
+    // delete message
+    const messagesList = chatContent.messages;
+    const messageIndex = messagesList.findIndex(mes => mes.ID === messageId);
+    if (messageIndex !== -1) { // delete only if exists
+        messagesList.splice(messageIndex, 1);
+    }
+
+    if (messageIndex === messagesList.length) { // was deleted 'newest' message 
+        const prevMessage = messagesList[messageIndex - 1];
+        if (prevMessage === undefined) { // local delete the chat (it's empty)
+            chatsStore.chatIdsListDelete(chatId);
+        }
+        else {
+            chat.updatedAt = prevMessage.timestamp;
+            chat.lastMessage = prevMessage;
+        }
+    }
+    
 }

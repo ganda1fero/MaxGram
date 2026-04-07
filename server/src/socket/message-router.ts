@@ -21,6 +21,7 @@ import { randomUUID } from 'node:crypto';
 import { chatsStorage } from '../stores/chats-store.js';
 import { messagesStore } from '../stores/messages-store.js';
 import { newMessagePush } from '../services/push-messages/new-message-push.js';
+import { deleteMessagePush } from '../services/push-messages/delete-message-push.js';
 
 
 export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
@@ -31,7 +32,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -59,6 +60,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'CONFIRM_GLOBAL_ID':
             wrapResponse<{}>(data, ws, confirmGlobalID);
+            break;
+        case 'DELETE_MESSAGE_PACKET':
+            wrapResponse<{}>(data, ws, deleteMessage);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -351,6 +355,49 @@ function confirmGlobalID(payLoad: any, ws: WebSocketWithIp): {} {
 
     sentMessageIdsResolver.resolve(localId);
     console.log(`essage, localId: ${localId} resolved!`);
+
+    return {};
+}
+
+function deleteMessage(payLoad: any, ws: WebSocketWithIp): {} {
+    const { chatId, messageId } = payLoad;
+    const selfId = connectionsStore.getUserUUID(ws)!;
+
+    const chat = chatsStorage.getChat(chatId);
+    if (chat === undefined) {
+        console.warn("unknown chat id");
+        return {};
+    }
+    if (!chat.participants.has(selfId)) {
+        console.warn("delete denied. User is not in chat participants");
+        return {};
+    }
+
+    const messagesList = messagesStore.getMessagesList(chatId);
+    const messageIndex = messagesList.findIndex(mes => mes.ID === messageId);
+    if (messageIndex === -1) {
+        console.warn("message not found");
+        return {};
+    }
+    else if (messageId === messagesList.length - 1) { // delete last message => change chat { updatedAt, lastMessage }
+        const prevMessage = messagesList[messageIndex - 1];
+        if (prevMessage === undefined) {    // no more activity
+            chat.updatedAt = chat.createdAt;
+            delete chat.lastMessage;
+        }
+        else {
+            chat.updatedAt = prevMessage.timestamp;
+            chat.lastMessage = prevMessage;
+        }
+    }
+    
+    const deletingMessage = messagesList[messageIndex]!;
+
+    // delete the message
+    messagesList.splice(messageIndex, 1);
+
+    // push all participants (avoid the delition initiator socket)
+    deleteMessagePush(deletingMessage, ws);
 
     return {};
 }

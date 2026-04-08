@@ -22,6 +22,7 @@ import { chatsStorage } from '../stores/chats-store.js';
 import { messagesStore } from '../stores/messages-store.js';
 import { newMessagePush } from '../services/push-messages/new-message-push.js';
 import { deleteMessagePush } from '../services/push-messages/delete-message-push.js';
+import { updateMessagePush } from '../services/push-messages/update-message-push.js';
 
 
 export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
@@ -32,7 +33,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -63,6 +64,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'DELETE_MESSAGE_PACKET':
             wrapResponse<{}>(data, ws, deleteMessage);
+            break;
+        case 'EDIT_MESSAGE':
+            wrapResponse<{}>(data, ws, editMessage);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -399,5 +403,51 @@ function deleteMessage(payLoad: any, ws: WebSocketWithIp): {} {
     // push all participants (avoid the delition initiator socket)
     deleteMessagePush(deletingMessage, ws);
 
+    return {};
+}
+
+function editMessage(payLoad: any, ws: WebSocketWithIp): {} {
+    const { chatId, messageId, newText } = payLoad;
+
+    // get chat
+    const chat = chatsStorage.getChat(chatId);
+    if (chat === undefined) {
+        console.warn("chat not found");
+        return {};
+    }
+
+    // check editor role
+    const editorId = connectionsStore.getUserUUID(ws)!;
+    if (!chat.participants.has(editorId)) {
+        console.warn("editor is not in participants");
+        return {};
+    }
+
+    // get message
+    const messagesList = messagesStore.getMessagesList(chatId);
+    const message = messagesList.find(mes => mes.ID === messageId);
+    if (message === undefined) {
+        console.warn("message not found");
+        return {};
+    }
+
+    if (!newText) {
+        console.warn("edit newText is empty");
+        return {};
+    }
+
+    // edit message
+    message.text = newText;
+    //TODO: add message.edited = true;
+
+    // edit lastMessage in chat if last message
+    if (chat.lastMessage !== undefined && chat.lastMessage?.ID === messageId) {
+        chat.lastMessage.text = newText;
+    }
+
+    // push all participants
+    updateMessagePush(message, ws);
+
+    // return empty answer
     return {};
 }

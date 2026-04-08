@@ -14,6 +14,7 @@ import type { PushNewMessage } from "@/types/web-socket/server/push-new-message"
 import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-id";
 import type { PushUpdateUser } from "@/types/web-socket/server/push-update-user";
 import type { PushDeleteMessage } from "@/types/web-socket/server/push-delete-message";
+import type { PushUpdateMessage } from "@/types/web-socket/server/push-update-message";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -22,7 +23,6 @@ import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
 import { useWebSocketStore } from "@/stores/useWebSocketStore";
-import { MessageSquare } from "lucide-vue-next";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -64,6 +64,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'PUSH_DELETE_MESSAGE':
             pushDeleteMessage(payLoad);
+            break;
+        case 'PUSH_UPDATE_MESSAGE':
+            pushUpdateMessage(payLoad);
             break;
         case undefined: // do nothing
             break;
@@ -274,4 +277,29 @@ function pushDeleteMessage(payLoad: PushDeleteMessage): void {
 
     if (modifyingdMessage.ID === messageId && modifyingdMessage.CHAT_ID === chatId)
         uiStore.chat.stopModifier();
+}
+
+function pushUpdateMessage(payLoad: PushUpdateMessage): void {
+    // unpacking message
+    const { messageData } = payLoad;
+    const { ID: messageId, CHAT_ID: chatId } = messageData
+
+    // init stores
+    const chatsStore = useChatStore();
+    const chatContentStore = useChatContentStore();
+
+    // get chat, chatContent, messageIndex
+    const chat = chatsStore.getChat(chatId);
+    const chatContent = chatContentStore.getChatContent(chatId);
+    const messageIndex = chatContent.messages.findIndex(mes => mes.ID === messageId);
+    if (messageIndex === -1) {
+        console.warn("editing message not found");
+        return;
+    }
+
+    // edit message
+    Object.assign(chatContent.messages[messageIndex]!, messageData); //NOTE: do not refactor it (needs to ref)
+
+    if (chat.lastMessage?.ID === messageId) // edit lastMesasge in chat if editing message was last in the chat
+        chat.lastMessage = chatContent.messages[messageIndex];
 }

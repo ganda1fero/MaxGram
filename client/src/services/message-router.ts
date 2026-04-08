@@ -212,6 +212,7 @@ function pushNewMessage(payLoad: PushNewMessage): void {
         CHAT_ID: chatId,
         SENDER_ID: senderId,
         text,
+        edited: false,
         timestamp,
     };
 
@@ -291,15 +292,12 @@ function pushUpdateMessage(payLoad: PushUpdateMessage): void {
     // get chat, chatContent, messageIndex
     const chat = chatsStore.getChat(chatId);
     const chatContent = chatContentStore.getChatContent(chatId);
+    if (chat.lastMessage !== undefined && chat.lastMessage.ID === messageId) // edit lastMesasge in chat if editing message was last in the chat
+        Object.assign(chat.lastMessage, messageData);
+
     const messageIndex = chatContent.messages.findIndex(mes => mes.ID === messageId);
-    if (messageIndex === -1) {
-        console.warn("editing message not found");
-        return;
-    }
+    if (messageIndex === -1) return;
 
     // edit message
     Object.assign(chatContent.messages[messageIndex]!, messageData); //NOTE: do not refactor it (needs to ref)
-
-    if (chat.lastMessage?.ID === messageId) // edit lastMesasge in chat if editing message was last in the chat
-        chat.lastMessage = chatContent.messages[messageIndex];
 }

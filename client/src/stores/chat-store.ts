@@ -143,6 +143,7 @@ export const useChatStore = defineStore('chat', () => {
             CHAT_ID: chatId,
             SENDER_ID: selfId,
             text: input,
+            edited: false,
             status: 'sending',
             timestamp: Date.now(),
         };
@@ -190,7 +191,7 @@ export const useChatStore = defineStore('chat', () => {
 
         // local edit message
         message.text = input;
-        //TODO: add message.edited = true;  here
+        message.edited = true;
 
         // local change lastMessage in chat if we edited it 
         const chat = getChat(chatId);

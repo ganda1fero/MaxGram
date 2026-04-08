@@ -50,6 +50,9 @@
     >
         <div class="text">{{ message.text }}</div>
         <div class="message-meta">
+            <Transition name="edited-label">
+                <div v-if="message.edited" class="edited-label">edited</div>
+            </Transition>
             <div class="time">{{ messageTime }}</div>
             <TransitionGroup v-if="authStore.getUUID() === message.SENDER_ID" name="message-icons">
                 <div v-if="message.status === 'sending'" class="check-icon">
@@ -109,12 +112,15 @@
             margin: 0 -6px 0 7px;
             bottom: -3px;
 
-            & .time{
+            & .time, & .edited-label{
                 font-size: 11px;
                 margin-right: 4px;
                 color: rgba(255, 255, 255, 0.6);
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
                     'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            }
+            & .edited-label{
+                margin-right: 2px;
             }
 
             & .check-icon{

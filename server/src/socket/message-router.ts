@@ -329,6 +329,7 @@ function sendMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         CHAT_ID: chatId,
         SENDER_ID: selfId,
         text,
+        edited: false,
         timestamp: Date.now(),
     };
     messagesStore.addMessage(newMessage);
@@ -438,7 +439,7 @@ function editMessage(payLoad: any, ws: WebSocketWithIp): {} {
 
     // edit message
     message.text = newText;
-    //TODO: add message.edited = true;
+    message.edited = true;
 
     // edit lastMessage in chat if last message
     if (chat.lastMessage !== undefined && chat.lastMessage?.ID === messageId) {

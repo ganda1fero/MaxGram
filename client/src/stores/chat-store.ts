@@ -6,6 +6,7 @@ import type { GetAllChatsPacket } from "@/types/web-socket/client/get-all-chats-
 import type { GetPrivateChatIdPacket } from "@/types/web-socket/client/get-private-chat-id-packet";
 import type { SendMessagePacket } from "@/types/web-socket/client/send-message-packet";
 import type { EditMessagePacket } from "@/types/web-socket/client/edit-message-packet";
+import type { ReplyMessagePacket } from "@/types/web-socket/client/reply-message-packet";
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
@@ -199,6 +200,58 @@ export const useChatStore = defineStore('chat', () => {
             chat.lastMessage.text = input;
         }
     }
+    const replyMessage = (): void => {
+        // get replying message
+        const replyingMessage = uiStore.chat.modifyingMessage;
+        if (replyingMessage === null) return;
+
+        // get input text
+        const input = uiStore.chat.chatInput;
+        if (!input) return;
+
+        // get and check active chat
+        const chat = getActiveChat();
+        if (chat === undefined || chat.ID !== replyingMessage.CHAT_ID) return;
+
+        // create and send reply message
+        const localId = crypto.randomUUID();
+        const chatId = chat.ID;
+        const replyMessagePacket: ReplyMessagePacket = {
+            type: 'REPLY_MESSAGE',
+            localId,
+            chatId,
+            text: input,
+            repliedMessageId: replyingMessage.ID,
+        }
+        socketStore.send(replyMessagePacket);
+
+        // clear modifier
+        uiStore.chat.stopModifier();
+
+        // create local message
+        const localMessage: Message = {
+            ID: localId,
+            technicalId: crypto.randomUUID(),
+            CHAT_ID: chatId,
+            SENDER_ID: authStore.getUUID()!,
+            text: input,
+            edited: false,
+            repliedMessage: replyingMessage,
+            timestamp: Date.now(),
+            status: 'sending',
+        };
+
+        const chatContent = chatContentStore.getChatContent(chatId);
+        if (!chatContent.hasMoreNewer) {
+
+            chatContent.messages.push(localMessage);
+        }
+
+        chat.lastMessage = localMessage;
+        chat.updatedAt = localMessage.timestamp;
+
+        uiStore.chat.chatInput = ''; // clear chat input 
+    }
 
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
@@ -218,5 +271,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage, editMessage };
+    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage, editMessage, replyMessage };
 });

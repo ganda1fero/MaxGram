@@ -33,7 +33,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE' | 'REPLY_MESSAGE'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -67,6 +67,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'EDIT_MESSAGE':
             wrapResponse<{}>(data, ws, editMessage);
+            break;
+        case 'REPLY_MESSAGE':
+            wrapResponse<AckSendMessage>(data, ws, replyMessage);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -451,4 +454,81 @@ function editMessage(payLoad: any, ws: WebSocketWithIp): {} {
 
     // return empty answer
     return {};
+}
+
+function replyMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
+    // data unpacking
+    const { localId, chatId, text, repliedMessageId } = payLoad;  
+
+    const chat = chatsStorage.getChat(chatId);
+    const messagesList = messagesStore.getMessagesList(chatId);
+    const selfId = connectionsStore.getUserUUID(ws)!;
+
+    // checking for duplicates
+    if (sentMessageIdsResolver.has(localId)) {
+        const globalId = sentMessageIdsResolver.get(localId)!;
+        const ackSendMessage: AckSendMessage = {
+            type: 'ACK_SEND_MESSAGE',
+            localId,
+            globalId,
+            chatId,
+            timestamp: messagesList.find(message => message.ID === globalId)?.timestamp ?? Date.now(),
+        };
+        return ackSendMessage;  // send ready data
+    }
+
+    // checking for availability in the participants
+    if (!chat?.participants?.has(selfId)) {
+        const ackSendMessage: AckSendMessage = {
+            type: 'DENIEN_SEND_MESSAGE',
+            localId,
+            chatId,
+        };
+        return ackSendMessage;  // acces denied (message cant'b be sent)
+    }
+
+    // check replied message
+    const rawRepliedMessage = messagesList.find(mes => mes.ID === repliedMessageId);
+    if (rawRepliedMessage === undefined) {
+        const ackSendMessage: AckSendMessage = {
+            type: 'DENIEN_SEND_MESSAGE',
+            localId,
+            chatId,
+        };
+        return ackSendMessage;  // acces denied (no replied message in the chat)
+    }
+    const {...repliedMessage} = {...rawRepliedMessage};
+    delete repliedMessage.repliedMessage; //HACK: delete replied message (if it's exists) in the replied to avoid unlimited chain of replied
+
+    // create new message
+    const globalId = randomUUID();
+    const newMessage: Message = {
+        ID: globalId,
+        CHAT_ID: chatId,
+        SENDER_ID: selfId,
+        text,
+        edited: false,
+        repliedMessage,
+        timestamp: Date.now(),
+    };
+
+    messagesStore.addMessage(newMessage);
+    // update chat lastMesage & updatedAt time
+    chat.lastMessage = newMessage;
+    chat.updatedAt = newMessage.timestamp;
+    // add <local;global> id pair to "redix"
+    sentMessageIdsResolver.add(localId, globalId);
+
+    // push new message every other participant's sockets
+    newMessagePush(newMessage, ws); 
+
+    // create ack message
+    const ackSendMessage: AckSendMessage = {
+        type: 'ACK_SEND_MESSAGE',
+        localId,
+        globalId,
+        chatId,
+        timestamp: newMessage.timestamp,
+    };
+    return ackSendMessage;  // return the ack (to send)
 }

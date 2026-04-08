@@ -201,7 +201,7 @@ function ackSendMessage(payLoad: AckSendMessage): void {
 }
 
 function pushNewMessage(payLoad: PushNewMessage): void {
-    const { id, chatId, senderId, text, timestamp } = payLoad;
+    const { id, chatId, senderId, text, repliedMessage, timestamp } = payLoad;
 
     const chatStore = useChatStore();
     const chatContentStore = useChatContentStore();
@@ -213,6 +213,7 @@ function pushNewMessage(payLoad: PushNewMessage): void {
         SENDER_ID: senderId,
         text,
         edited: false,
+        repliedMessage,
         timestamp,
     };
 

@@ -64,7 +64,8 @@ export const useUiStore = defineStore('ui', () => {
         if (messageIndex === messagesList.length) {
             const prevMessage = messagesList[messageIndex - 1];
             if (prevMessage === undefined){
-                chatsStore.chatIdsListDelete(chatId);
+                chat.updatedAt = 0;
+                chat.lastMessage = undefined;
             }
             else {
                 chat.updatedAt = prevMessage.timestamp;

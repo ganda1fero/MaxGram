@@ -63,6 +63,10 @@ export const useChatStore = defineStore('chat', () => {
 
     const getSortedChatIds = computed(() => {
         const sortedChatsList = Array.from(chatIdsSet.value)
+            .filter(chatId => {
+                const chat = getChat(chatId);
+                return !!chat.lastMessage;
+            })
             .sort((chatAId, chatBId) => {
                 const chatA = getChat(chatAId);
                 const chatB = getChat(chatBId);

@@ -6,6 +6,7 @@ export type Message = {
     CHAT_ID: UUID, // chat UUID
     SENDER_ID: UUID, // user UUID
     text: string,
+    edited: boolean,
     timestamp: number,
     status?: 'sending' | 'deniend',
 }

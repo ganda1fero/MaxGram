@@ -14,6 +14,7 @@ import type { PushNewMessage } from "@/types/web-socket/server/push-new-message"
 import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-id";
 import type { PushUpdateUser } from "@/types/web-socket/server/push-update-user";
 import type { PushDeleteMessage } from "@/types/web-socket/server/push-delete-message";
+import type { PushUpdateMessage } from "@/types/web-socket/server/push-update-message";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -63,6 +64,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'PUSH_DELETE_MESSAGE':
             pushDeleteMessage(payLoad);
+            break;
+        case 'PUSH_UPDATE_MESSAGE':
+            pushUpdateMessage(payLoad);
             break;
         case undefined: // do nothing
             break;
@@ -208,6 +212,7 @@ function pushNewMessage(payLoad: PushNewMessage): void {
         CHAT_ID: chatId,
         SENDER_ID: senderId,
         text,
+        edited: false,
         timestamp,
     };
 
@@ -266,4 +271,33 @@ function pushDeleteMessage(payLoad: PushDeleteMessage): void {
         }
     }
     
+    // clear modifier if deleted modifyered message
+    const uiStore = useUiStore();
+    const modifyingdMessage = uiStore.chat.modifyingMessage;
+    if (modifyingdMessage === null) return;
+
+    if (modifyingdMessage.ID === messageId && modifyingdMessage.CHAT_ID === chatId)
+        uiStore.chat.stopModifier();
+}
+
+function pushUpdateMessage(payLoad: PushUpdateMessage): void {
+    // unpacking message
+    const { messageData } = payLoad;
+    const { ID: messageId, CHAT_ID: chatId } = messageData
+
+    // init stores
+    const chatsStore = useChatStore();
+    const chatContentStore = useChatContentStore();
+
+    // get chat, chatContent, messageIndex
+    const chat = chatsStore.getChat(chatId);
+    const chatContent = chatContentStore.getChatContent(chatId);
+    if (chat.lastMessage !== undefined && chat.lastMessage.ID === messageId) // edit lastMesasge in chat if editing message was last in the chat
+        Object.assign(chat.lastMessage, messageData);
+
+    const messageIndex = chatContent.messages.findIndex(mes => mes.ID === messageId);
+    if (messageIndex === -1) return;
+
+    // edit message
+    Object.assign(chatContent.messages[messageIndex]!, messageData); //NOTE: do not refactor it (needs to ref)
 }

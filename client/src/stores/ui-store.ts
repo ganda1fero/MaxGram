@@ -18,7 +18,10 @@ export const useUiStore = defineStore('ui', () => {
     // sidebar
     const isSearchMode = ref<boolean>(false);
 
-    //chat
+    // chat
+    const inputModifier = ref<'edit' | 'reply' | null>(null);
+    const modifyingMessage = ref<Message | null>(null);
+
     const chatInput = ref<string>('');
     const emojiButtonState = ref<boolean>(false);
     const addMediaButtonState = ref<boolean>(false);
@@ -68,18 +71,36 @@ export const useUiStore = defineStore('ui', () => {
                 chat.lastMessage = prevMessage;
             }
         }
+
+        // clear modifier states if deleted message
+        if (modifyingMessage.value === lastSelectedMessage.value)
+            stopModifier();
     }
     const editLastSelectedMessage = (): void => {
-
+        inputModifier.value = 'edit';
+        modifyingMessage.value = lastSelectedMessage.value;
+        chatInput.value = modifyingMessage.value?.text || '';
     }
     const replyLastSelectedMessage = (): void => {
+        inputModifier.value = 'reply';
+        modifyingMessage.value = lastSelectedMessage.value;
+    }
 
+    const stopModifier = (): void => {
+        if (inputModifier.value !== null)
+            chatInput.value = '';   // clear input
+
+        inputModifier.value = null;
+        modifyingMessage.value = null;
     }
     
     // --- getters
     const sidebar = { isSearchMode };
     const chat = { 
         chatInput, 
+        inputModifier,
+        modifyingMessage,
+        stopModifier,
         emojiButtonState,
         addMediaButtonState,
         highlightedMessageId, 

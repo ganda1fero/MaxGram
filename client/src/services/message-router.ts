@@ -22,6 +22,7 @@ import { useChatContentStore } from "@/stores/chat-content-store";
 import { useChatStore } from "@/stores/chat-store";
 import { useUiStore } from "@/stores/ui-store";
 import { useWebSocketStore } from "@/stores/useWebSocketStore";
+import { MessageSquare } from "lucide-vue-next";
 
 export function handleIncomingPacket(data: Packet) {
     const { payLoad } = data;
@@ -266,4 +267,13 @@ function pushDeleteMessage(payLoad: PushDeleteMessage): void {
         }
     }
     
+    // clear modifier if deleted modifyered message
+    const uiStore = useUiStore();
+    const modifyingdMessage = uiStore.chat.modifyingMessage;
+    if (modifyingdMessage === null) return;
+
+    if (modifyingdMessage.ID === messageId && modifyingdMessage.CHAT_ID === chatId) {
+        uiStore.chat.modifyingMessage = null;
+        uiStore.chat.inputModifier = null;
+    }
 }

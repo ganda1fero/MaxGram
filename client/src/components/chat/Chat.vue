@@ -205,8 +205,8 @@
 
         <MessageMenu 
             ref="menuRef"
-            @reply=""
-            @edit=""
+            @reply="uiStore.chat.lastSelectedMessage.reply()"
+            @edit="uiStore.chat.lastSelectedMessage.edit()"
             @copy="uiStore.chat.lastSelectedMessage.copyToClipboard()"
             @delete="uiStore.chat.lastSelectedMessage.delete()"
             @close-menu="uiStore.chat.highlightedMessageId = null"

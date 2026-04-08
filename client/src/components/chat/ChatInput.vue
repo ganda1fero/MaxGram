@@ -24,22 +24,18 @@
 
     const modifierText = computed((): string => {
         const modifier = uiStore.chat.inputModifier;
+
         if (modifier === null) return '';
         else if (modifier === 'edit') return 'Edit Message';
         else if (modifier === 'reply') return 'Reply Message';
         
         return 'unknown';
     });
-    const clearInputModifier = (): void => {
-        uiStore.chat.inputModifier = null;
-        uiStore.chat.modifyingMessage = null;
-    }
 
     watch(chatStore.getActiveChatId, () => {
         // clear when switch chat
         chat.chatInput = '';
-        chat.inputModifier = null;
-        chat.modifyingMessage = null;
+        chat.stopModifier();
         chat.lastSelectedMessage.value = null;
     });
 
@@ -60,7 +56,7 @@
                     <div class="modifier-close-icon">
                         <ExitButton 
                             :is-focus="true"
-                            @click="clearInputModifier()"
+                            @click="uiStore.chat.stopModifier()"
                         />
                     </div>
 

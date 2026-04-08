@@ -5,6 +5,7 @@ import type { GetChatPacket } from "@/types/web-socket/client/get-chat-packet";
 import type { GetAllChatsPacket } from "@/types/web-socket/client/get-all-chats-packet";
 import type { GetPrivateChatIdPacket } from "@/types/web-socket/client/get-private-chat-id-packet";
 import type { SendMessagePacket } from "@/types/web-socket/client/send-message-packet";
+import type { EditMessagePacket } from "@/types/web-socket/client/edit-message-packet";
 
 import { defineStore } from "pinia";
 import { ref, computed } from 'vue'
@@ -160,6 +161,43 @@ export const useChatStore = defineStore('chat', () => {
 
         return true;
     }
+    const editMessage = (): void => {
+        // get editing message
+        const message = uiStore.chat.modifyingMessage;
+        if (message === null) return;
+        
+        // get new text
+        const input = uiStore.chat.chatInput;
+        if (input.length === 0) {   // if input length == 0 => delete the message
+            uiStore.chat.lastSelectedMessage.value = message;
+            uiStore.chat.lastSelectedMessage.delete();
+            return;
+        }
+
+        // create and send edit packet
+        const chatId = message.CHAT_ID;
+        const messageId = message.ID;
+        const editMessagePacket: EditMessagePacket = {
+            type: 'EDIT_MESSAGE',
+            chatId,
+            messageId,
+            newText: input,
+        };
+        socketStore.send(editMessagePacket);
+
+        // clear modifier
+        uiStore.chat.stopModifier();
+
+        // local edit message
+        message.text = input;
+        //TODO: add message.edited = true;  here
+
+        // local change lastMessage in chat if we edited it 
+        const chat = getChat(chatId);
+        if (chat.lastMessage?.ID === messageId) {
+            chat.lastMessage.text = input;
+        }
+    }
 
     const fetchGetChat = (chatId: UUID): void => {
         const getChatPacketObj: GetChatPacket = {
@@ -179,5 +217,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage };
+    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage, editMessage };
 });

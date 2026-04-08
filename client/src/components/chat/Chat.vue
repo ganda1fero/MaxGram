@@ -28,12 +28,19 @@
     const selfId = computed((): UUID | null => authstore.getUUID());
 
     const sendLogic = () => {
-        const input = uiStore.chat.chatInput;
-        if (input.length === 0) return;
+        const sendModifier = uiStore.chat.inputModifier;
 
-        chatStore.sendMessage();
-
-        scrollToBottom();
+        switch(sendModifier) {
+            case null:  // just send message
+                chatStore.sendMessage();
+                scrollToBottom();
+                break;
+            case 'edit':    // edit message
+                chatStore.editMessage();
+                break;
+            case 'reply':   // reply message
+                break;
+        }
     }
 
     type SemanticIndent = {

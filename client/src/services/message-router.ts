@@ -272,8 +272,6 @@ function pushDeleteMessage(payLoad: PushDeleteMessage): void {
     const modifyingdMessage = uiStore.chat.modifyingMessage;
     if (modifyingdMessage === null) return;
 
-    if (modifyingdMessage.ID === messageId && modifyingdMessage.CHAT_ID === chatId) {
-        uiStore.chat.modifyingMessage = null;
-        uiStore.chat.inputModifier = null;
-    }
+    if (modifyingdMessage.ID === messageId && modifyingdMessage.CHAT_ID === chatId)
+        uiStore.chat.stopModifier();
 }

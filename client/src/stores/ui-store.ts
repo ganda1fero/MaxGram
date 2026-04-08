@@ -73,18 +73,25 @@ export const useUiStore = defineStore('ui', () => {
         }
 
         // clear modifier states if deleted message
-        if (modifyingMessage.value === lastSelectedMessage.value) {
-            modifyingMessage.value = null;
-            inputModifier.value = null;
-        }
+        if (modifyingMessage.value === lastSelectedMessage.value)
+            stopModifier();
     }
     const editLastSelectedMessage = (): void => {
         inputModifier.value = 'edit';
         modifyingMessage.value = lastSelectedMessage.value;
+        chatInput.value = modifyingMessage.value?.text || '';
     }
     const replyLastSelectedMessage = (): void => {
         inputModifier.value = 'reply';
         modifyingMessage.value = lastSelectedMessage.value;
+    }
+
+    const stopModifier = (): void => {
+        if (inputModifier.value !== null)
+            chatInput.value = '';   // clear input
+
+        inputModifier.value = null;
+        modifyingMessage.value = null;
     }
     
     // --- getters
@@ -93,6 +100,7 @@ export const useUiStore = defineStore('ui', () => {
         chatInput, 
         inputModifier,
         modifyingMessage,
+        stopModifier,
         emojiButtonState,
         addMediaButtonState,
         highlightedMessageId, 

@@ -39,6 +39,8 @@
                 chatStore.editMessage();
                 break;
             case 'reply':   // reply message
+                chatStore.replyMessage();
+                scrollToBottom();
                 break;
         }
     }

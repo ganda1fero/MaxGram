@@ -9,7 +9,7 @@ import { connectionsStore } from "../../stores/connections-store.js";
 
 export const newMessagePush = (message: Message, senderWebSocket: WebSocket): void => {
     // unpacking massage
-    const { ID: id, CHAT_ID: chatId, SENDER_ID: senderId, text, timestamp } = message;
+    const { ID: id, CHAT_ID: chatId, SENDER_ID: senderId, text, repliedMessage, timestamp } = message;
 
     // get chat
     const chat = chatsStorage.getChat(chatId);
@@ -25,6 +25,7 @@ export const newMessagePush = (message: Message, senderWebSocket: WebSocket): vo
         chatId,
         senderId,
         text,
+        repliedMessage,
         timestamp,
     };
     const pushNewMessagePacket: Packet<PushNewMessage> = {

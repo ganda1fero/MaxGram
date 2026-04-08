@@ -6,5 +6,6 @@ export type Message = {
     readonly SENDER_ID: UUID, // user UUID
     text: string,
     edited: boolean,
+    repliedMessage?: Message,
     timestamp: number,
 }

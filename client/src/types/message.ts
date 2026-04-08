@@ -7,6 +7,7 @@ export type Message = {
     SENDER_ID: UUID, // user UUID
     text: string,
     edited: boolean,
+    repliedMessage?: Message,
     timestamp: number,
     status?: 'sending' | 'deniend',
 }

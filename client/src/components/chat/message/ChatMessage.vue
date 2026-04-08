@@ -3,6 +3,7 @@
     import type { Message } from '@/types/message';
 
     import { useAuthStore } from '@/stores/useAuthStore';
+    import { useUsersStore } from '@/stores/useUsersStore';
     import { computed } from 'vue';
 
     import { Clock } from 'lucide-vue-next';
@@ -16,6 +17,7 @@
     }>();
 
     const authStore = useAuthStore();
+    const usersStore = useUsersStore();
 
     type Classes = {
         'its-mine'?: boolean,
@@ -31,6 +33,8 @@
 
         return classes;
     });
+
+    const isReply = computed((): boolean => props.message.repliedMessage !== undefined);
 
     const messageTime = computed(() => {
         const sendTime = new Date(props.message.timestamp);
@@ -48,33 +52,44 @@
         class="message-bubble"
         :class="classObj"
     >
-        <div class="text">{{ message.text }}</div>
-        <div class="message-meta">
-            <Transition name="edited-label">
-                <div v-if="message.edited" class="edited-label">edited</div>
-            </Transition>
-            <div class="time">{{ messageTime }}</div>
-            <TransitionGroup v-if="authStore.getUUID() === message.SENDER_ID" name="message-icons">
-                <div v-if="message.status === 'sending'" class="check-icon">
-                    <Clock :size="14"/>
-                </div>
-                <div v-else-if="message.status === 'deniend'" class="denied-icon">
-                    <CircleAlert :size="14"/>
-                </div>
-                <div v-else class="check-icon">
-                    <CheckCheck :size="14"/>
-                </div>
-            </TransitionGroup>
+        <div v-if="isReply" class="replied-message">
+            <span class="name no-copy">{{ usersStore.getUser(message.repliedMessage!.SENDER_ID).username }}</span>
+            <span class="replied-text no-copy"> {{ message.repliedMessage!.text }}</span>
+        </div>
+        <div style="display:flex; flex-direction:row; justify-content: space-between;">
+            <div class="text">{{ message.text }}</div>
+            <div class="message-meta no-copy">
+                <Transition name="edited-label">
+                    <div v-if="message.edited" class="edited-label">edited</div>
+                </Transition>
+                <div class="time">{{ messageTime }}</div>
+                <TransitionGroup v-if="authStore.getUUID() === message.SENDER_ID" name="message-icons">
+                    <div v-if="message.status === 'sending'" class="check-icon">
+                        <Clock :size="14"/>
+                    </div>
+                    <div v-else-if="message.status === 'deniend'" class="denied-icon">
+                        <CircleAlert :size="14"/>
+                    </div>
+                    <div v-else class="check-icon">
+                        <CheckCheck :size="14"/>
+                    </div>
+                </TransitionGroup>
+            </div>
         </div>
         <div v-if="isFinalForSender" class="message-tail" :class="classObj" />
     </div>
 </template>
 <style scoped>
+    .no-copy {
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
     .message-bubble{
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         position: relative;
-        gap: 2px;
+        gap: 3px;
 
         width: fit-content;
         max-width: 500px;
@@ -85,6 +100,41 @@
 
         transition: all 0.2s ease;
         
+        & .replied-message{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            box-sizing: border-box;
+
+            width: 100%;
+            height: auto;
+            padding: 2px 5px;
+
+            white-space: nowrap;
+            overflow: hidden;
+
+            border: none;
+            border-radius: 3px;
+            border-left: solid rgb(255, 255, 255) 3px;
+
+            background-color: rgba(255, 255, 255, 0.2);
+
+            & .name, & .replied-text{
+                line-height: 18px;
+                font-size: 16px;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 1);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            }
+            & .replied-text{
+                font-size: 12px;
+                font-weight: 400;
+                color: rgba(255, 255, 255, 0.85);
+            }
+        }
+
         &.its-mine{
             margin-left: auto;
             background-color: rgba(39, 150, 203, 1);

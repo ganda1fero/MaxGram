@@ -15,6 +15,7 @@ import type { ConfirmGlobalId } from "@/types/web-socket/client/confirm-global-i
 import type { PushUpdateUser } from "@/types/web-socket/server/push-update-user";
 import type { PushDeleteMessage } from "@/types/web-socket/server/push-delete-message";
 import type { PushUpdateMessage } from "@/types/web-socket/server/push-update-message";
+import type { AckGetParticipantsInfo } from "@/types/web-socket/server/ack-get-participants-info";
 
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUsersStore } from "@/stores/useUsersStore";
@@ -67,6 +68,9 @@ export function handleIncomingPacket(data: Packet) {
             break;
         case 'PUSH_UPDATE_MESSAGE':
             pushUpdateMessage(payLoad);
+            break;
+        case 'GET_PARTICIPANTS_INFO':
+            ackGetParticipantsInfo(payLoad);
             break;
         case undefined: // do nothing
             break;
@@ -240,6 +244,11 @@ function pushUpdateUser(payLoad: PushUpdateUser): void {
     // update user data
     const usersStore = useUsersStore();
     usersStore.upsertUser(cleanedUserUpdate);
+
+    //
+    if (cleanedUserUpdate.status === undefined) return;
+    const uiStore = useUiStore();
+    uiStore.sidebar.onlineCount! += (cleanedUserUpdate.status === 'online') ? 1 : -1;
 }
 
 function pushDeleteMessage(payLoad: PushDeleteMessage): void {
@@ -301,4 +310,14 @@ function pushUpdateMessage(payLoad: PushUpdateMessage): void {
 
     // edit message
     Object.assign(chatContent.messages[messageIndex]!, messageData); //NOTE: do not refactor it (needs to ref)
+}
+
+function ackGetParticipantsInfo(payLoad: AckGetParticipantsInfo): void {
+    // unpacking message
+    const { participantsCount, onlineCount } = payLoad;
+
+    const uiStore = useUiStore();
+
+    uiStore.sidebar.participantsCount = participantsCount;
+    uiStore.sidebar.onlineCount = onlineCount;
 }

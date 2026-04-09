@@ -17,6 +17,8 @@ export const useUiStore = defineStore('ui', () => {
 
     // sidebar
     const isSearchMode = ref<boolean>(false);
+    const participantsCount = ref<number | null>(null);
+    const onlineCount = ref<number | null>(null);
 
     // chat
     const inputModifier = ref<'edit' | 'reply' | null>(null);
@@ -64,7 +66,8 @@ export const useUiStore = defineStore('ui', () => {
         if (messageIndex === messagesList.length) {
             const prevMessage = messagesList[messageIndex - 1];
             if (prevMessage === undefined){
-                chatsStore.chatIdsListDelete(chatId);
+                chat.updatedAt = 0;
+                chat.lastMessage = undefined;
             }
             else {
                 chat.updatedAt = prevMessage.timestamp;
@@ -95,7 +98,11 @@ export const useUiStore = defineStore('ui', () => {
     }
     
     // --- getters
-    const sidebar = { isSearchMode };
+    const sidebar = { 
+        isSearchMode,
+        participantsCount,
+        onlineCount,
+    };
     const chat = { 
         chatInput, 
         inputModifier,

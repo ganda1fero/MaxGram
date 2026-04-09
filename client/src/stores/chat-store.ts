@@ -63,6 +63,10 @@ export const useChatStore = defineStore('chat', () => {
 
     const getSortedChatIds = computed(() => {
         const sortedChatsList = Array.from(chatIdsSet.value)
+            .filter(chatId => {
+                const chat = getChat(chatId);
+                return !!chat.lastMessage;
+            })
             .sort((chatAId, chatBId) => {
                 const chatA = getChat(chatAId);
                 const chatB = getChat(chatBId);
@@ -75,6 +79,7 @@ export const useChatStore = defineStore('chat', () => {
             });
         return sortedChatsList;
     });
+    const getChatIdsList = computed(() => Array.from(chatIdsSet.value))
 
     // --- actions
     const addChat = (chat: Chat): boolean => {
@@ -271,5 +276,5 @@ export const useChatStore = defineStore('chat', () => {
         socketStore.send(getPrivateChatIdPacketObj);
     }
 
-    return { getChat, getSortedChatIds, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage, editMessage, replyMessage };
+    return { getChat, getSortedChatIds, getChatIdsList, upsertChat, getActiveChat, getActiveChatId, openChat, closeChat, fetchGetPrivateChatId, initChatsList, setChatIdsList, chatIdsListAdd, chatIdsListDelete, sendMessage, editMessage, replyMessage };
 });

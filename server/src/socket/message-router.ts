@@ -11,6 +11,7 @@ import type { AckGetAllChats } from '../types/web-socked/server/ack-get-all-chat
 import type { AckGetPrivateChatId } from '../types/web-socked/server/ack-get-private-chat-id.js';
 import type { GetChatContentPacket } from '../types/web-socked/client/get-chat-content-packet.js';
 import type { AckSendMessage } from '../types/web-socked/server/ack-send-message.js';
+import type { AckGetParticipantsInfo } from '../types/web-socked/server/ack-get-participants-info.js';
 
 import type { User } from '../types/user.js';
 import type { Chat } from '../types/chat.js';
@@ -33,7 +34,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE' | 'REPLY_MESSAGE'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE' | 'REPLY_MESSAGE' | 'GET_PARTICIPANTS_INFO'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -70,6 +71,9 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'REPLY_MESSAGE':
             wrapResponse<AckSendMessage>(data, ws, replyMessage);
+            break;
+        case 'GET_PARTICIPANTS_INFO':
+            wrapResponse<AckGetParticipantsInfo>(data, ws, getParticipantsInfo);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -530,4 +534,43 @@ function replyMessage(payLoad: any, ws: WebSocketWithIp): AckSendMessage {
         timestamp: newMessage.timestamp,
     };
     return ackSendMessage;  // return the ack (to send)
+}
+
+function getParticipantsInfo(data: any, ws: WebSocketWithIp): AckGetParticipantsInfo {
+    data;
+    const selfId = connectionsStore.getUserUUID(ws);
+    if (selfId === undefined) {
+        console.warn('user not found');
+        return {} as AckGetParticipantsInfo;
+    }
+
+    const usersChatsSet = chatsStorage.getUserChatsSet(selfId);
+    if (usersChatsSet === undefined) {
+        console.warn("user's chats not found")
+        return {} as AckGetParticipantsInfo;
+    }
+
+    const participantsIdSet = new Set<UUID>();
+    for (const chat of usersChatsSet.keys()) {
+        chat.participants
+            .keys()
+            .forEach(userId => participantsIdSet.add(userId));
+    }
+
+    let onlineCount = 0;
+    participantsIdSet
+        .keys()
+        .forEach(userId => {
+            const user = usersStore.getByID(userId);
+            if (user === undefined || user.status !== 'online' || user.ID === selfId) return;
+
+            onlineCount++;
+        });
+    
+    const ackGetParticipantsInfo: AckGetParticipantsInfo = {
+        type: 'GET_PARTICIPANTS_INFO',
+        participantsCount: participantsIdSet.size - 1,
+        onlineCount,
+    }
+    return ackGetParticipantsInfo;
 }

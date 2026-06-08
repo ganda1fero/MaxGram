@@ -34,7 +34,7 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
         return;
     }
 
-    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE' | 'REPLY_MESSAGE' | 'GET_PARTICIPANTS_INFO'; 
+    const type = data.payLoad.type as 'AUTH' | 'GET_USER' | 'SEARCH_USERS' | 'GET_CHAT_CONTENT' | 'GET_CHAT' | 'GET_ALL_CHATS' | 'GET_PRIVATE_CHAT_ID' | 'SEND_MESSAGE' | 'CONFIRM_GLOBAL_ID' | 'DELETE_MESSAGE_PACKET' | 'EDIT_MESSAGE' | 'REPLY_MESSAGE' | 'GET_PARTICIPANTS_INFO' | 'ADD_REACTION' | 'CLEAR_REACTION'; 
     switch (type) {
         case 'AUTH':
             wrapResponse<AckAuth>(data, ws, auth)
@@ -74,6 +74,12 @@ export function handleIncomingPacket(data: Packet, ws: WebSocketWithIp) {
             break;
         case 'GET_PARTICIPANTS_INFO':
             wrapResponse<AckGetParticipantsInfo>(data, ws, getParticipantsInfo);
+            break;
+        case 'ADD_REACTION':
+            wrapResponse<{}>(data, ws, addReaction);
+            break;
+        case 'CLEAR_REACTION':
+            wrapResponse<{}>(data, ws, clearReaction);
             break;
         default:    // unknown type!
             wrapResponse(data, ws, () => ({}));
@@ -573,4 +579,89 @@ function getParticipantsInfo(data: any, ws: WebSocketWithIp): AckGetParticipants
         onlineCount,
     }
     return ackGetParticipantsInfo;
+}
+
+function addReaction(payLoad: any, ws: WebSocketWithIp): {} {
+    const { chatId, messageId, reactionType } = payLoad;
+
+    // get chat
+    const chat = chatsStorage.getChat(chatId);
+    if (chat === undefined) {
+        console.warn("chat not found");
+        return {};
+    }
+
+    const editorId = connectionsStore.getUserUUID(ws)!;
+    if (!chat.participants.has(editorId)) {
+        console.warn("editor is not in participants");
+        return {};
+    }
+
+    // get message
+    const messagesList = messagesStore.getMessagesList(chatId);
+    const message = messagesList.find(mes => mes.ID === messageId);
+    if (message === undefined) {
+        console.warn("message not found");
+        return {};
+    }
+
+    if (message.reactions !== undefined && message.reactions.filter(reaction => reaction.ownerId === editorId).length > 0) {
+        console.warn("user already have reaction on this message");
+        return {};
+    }
+
+    // add reaction
+    if (message.reactions === undefined)
+        message.reactions = [];
+
+    message.reactions.push({
+        id: crypto.randomUUID(),
+        ownerId: editorId,
+        type: reactionType,
+        timestamp: Date.now(),
+    });
+
+    // push all participants
+    updateMessagePush(message, ws);
+
+    // return empty answer
+    return {};
+}
+
+function clearReaction(payLoad: any, ws: WebSocketWithIp): {} {
+    const { chatId, messageId } = payLoad;
+
+    // get chat
+    const chat = chatsStorage.getChat(chatId);
+    if (chat === undefined) {
+        console.warn("chat not found");
+        return {};
+    }
+
+    const editorId = connectionsStore.getUserUUID(ws)!;
+    if (!chat.participants.has(editorId)) {
+        console.warn("editor is not in participants");
+        return {};
+    }
+
+    // get message
+    const messagesList = messagesStore.getMessagesList(chatId);
+    const message = messagesList.find(mes => mes.ID === messageId);
+    if (message === undefined) {
+        console.warn("message not found");
+        return {};
+    }
+
+    if (message.reactions !== undefined && message.reactions.filter(reaction => reaction.ownerId === editorId).length > 0) {
+        message.reactions = message.reactions.filter(reaction => reaction.ownerId !== editorId);
+    } else {
+        console.warn("user no have reaction on this message");
+        return {};
+    }
+
+    // push all participants
+    updateMessagePush(message, ws);
+
+    // return empty answer
+    return {};
 }

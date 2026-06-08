@@ -1,5 +1,7 @@
 import type { UUID } from "node:crypto";
 
+import type { MessageReaction } from './reaction.js';
+
 export type Message = {
     readonly ID: UUID, // UUID 
     readonly CHAT_ID: UUID, // chat UUID
@@ -7,5 +9,6 @@ export type Message = {
     text: string,
     edited: boolean,
     repliedMessage?: Message,
+    reactions?: MessageReaction[],
     timestamp: number,
 }
